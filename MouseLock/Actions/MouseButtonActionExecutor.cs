@@ -1,8 +1,10 @@
 using FFXIVClientStructs.FFXIV.Client.System.Input;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using MouseLock.Configuration;
+using MouseLock.Hotbars;
+using MouseLock.MouseLook;
 
-namespace MouseLock.MouseLook.Actions;
+namespace MouseLock.Actions;
 
 internal sealed unsafe class MouseButtonActionExecutor
 {
@@ -65,7 +67,7 @@ internal sealed unsafe class MouseButtonActionExecutor
                 gameInputState.AdvanceRelease(inputData);
                 if (allowNewActions && buttonPressed)
                 {
-                    MouseButtonHotbarExecutor.Execute(binding.Hotbar, binding.Slot);
+                    HotbarSlotInterop.Execute(binding.Hotbar, binding.Slot);
                 }
 
                 return;

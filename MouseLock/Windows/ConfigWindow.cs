@@ -50,6 +50,13 @@ public sealed partial class ConfigWindow : Window, IDisposable
             Save();
         }
 
+        var disableWhenTalkAddonVisible = conditions.DisableWhenTalkAddonVisible;
+        if (ImGui.Checkbox("Pause while talking to NPCs", ref disableWhenTalkAddonVisible))
+        {
+            conditions.DisableWhenTalkAddonVisible = disableWhenTalkAddonVisible;
+            Save();
+        }
+
         var disableWhenNativeAddonFocused = conditions.DisableWhenNativeAddonFocused;
         if (ImGui.Checkbox("Pause while a native game window is focused", ref disableWhenNativeAddonFocused))
         {
@@ -63,7 +70,7 @@ public sealed partial class ConfigWindow : Window, IDisposable
             conditions.DisableWhenNativeAddonHovered = disableWhenNativeAddonHovered;
             Save();
         }
-        DrawTooltip("Not recommended.");
+        DrawTooltip("Not recommended, can cause weird behaviour if an addon is in the direct center");
 
         var requireCombat = conditions.RequireCombat;
         if (ImGui.Checkbox("Only lock in combat", ref requireCombat))
@@ -92,6 +99,13 @@ public sealed partial class ConfigWindow : Window, IDisposable
         if (ImGui.Checkbox("Hide cursor overlay plugins during mouselook", ref hideCursorOverlayPlugins))
         {
             _config.General.Compatibility.HideCursorOverlayPluginsDuringMouseLook = hideCursorOverlayPlugins;
+            Save();
+        }
+
+        var disableDuringTPieRing = _config.General.Compatibility.DisableDuringTPieRing;
+        if (ImGui.Checkbox("Pause while using TPie", ref disableDuringTPieRing))
+        {
+            _config.General.Compatibility.DisableDuringTPieRing = disableDuringTPieRing;
             Save();
         }
 

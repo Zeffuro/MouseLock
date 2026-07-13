@@ -4,7 +4,9 @@ using FFXIVClientStructs.FFXIV.Client.System.Input;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
+using MouseLock.Compatibility;
 using MouseLock.Configuration;
+using MouseLock.Game;
 
 namespace MouseLock.MouseLook.Activation;
 
@@ -41,12 +43,23 @@ internal sealed class MouseLookActivationRules(ChatTwoTypingState chatTwoTypingS
             return false;
         }
 
-        if (conditions.DisableWhenNativeAddonFocused && IsNativeAddonFocused())
+        if (conditions.DisableWhenTalkAddonVisible && NativeUiState.IsAddonVisible("Talk"))
         {
             return false;
         }
 
-        if (conditions.DisableWhenNativeAddonHovered && IsNativeAddonHovered(inputData))
+        if (conditions.DisableWhenNativeAddonFocused && NativeUiState.IsBlockingAddonFocused())
+        {
+            return false;
+        }
+
+        if (conditions.DisableWhenNativeAddonHovered && NativeUiState.IsBlockingAddonHovered(inputData))
+        {
+            return false;
+        }
+
+        if (PluginState.Config.General.Compatibility.DisableDuringTPieRing &&
+            TPieCompatibilityState.IsRingActive())
         {
             return false;
         }
@@ -94,59 +107,6 @@ internal sealed class MouseLookActivationRules(ChatTwoTypingState chatTwoTypingS
         }
 
         return chatTwoTypingState.IsInputFocused;
-    }
-
-    private static unsafe bool IsNativeAddonFocused()
-    {
-        var stage = AtkStage.Instance();
-        if (stage is null)
-        {
-            return false;
-        }
-
-        var unitManager = stage->RaptureAtkUnitManager;
-        if (unitManager is null)
-        {
-            return false;
-        }
-
-        return unitManager->FocusedAddon is not null && IsBlockingAddon(unitManager->FocusedAddon);
-    }
-
-    private static unsafe bool IsNativeAddonHovered(UIInputData* inputData)
-    {
-        var stage = AtkStage.Instance();
-        if (stage is null)
-        {
-            return false;
-        }
-
-        if (stage->AtkInputManager is not null && stage->AtkInputManager->FocusedNode is not null)
-        {
-            return true;
-        }
-
-        var unitManager = stage->RaptureAtkUnitManager;
-        if (unitManager is null)
-        {
-            return false;
-        }
-
-        var collision = new AddonCollision();
-        unitManager->GetAddonCollision(
-            &collision,
-            (short)inputData->CursorInputs.PositionX,
-            (short)inputData->CursorInputs.PositionY);
-
-        return collision.UnitBase is not null && IsBlockingAddon(collision.UnitBase);
-    }
-
-    private static unsafe bool IsBlockingAddon(AtkUnitBase* addon)
-    {
-        return addon is not null &&
-               addon->IsVisible &&
-               addon->IsReady &&
-               !addon->ShouldIgnoreInputs();
     }
 
     private static unsafe bool IsReleaseModifierHeld(UIInputData* inputData)

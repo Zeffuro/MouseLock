@@ -1,6 +1,6 @@
 namespace MouseLock.MouseLook.Native;
 
-internal static class NativeMouseLookSignatures
+internal static class MouseLookSignatures
 {
     public const string CameraInputSource =
         "48 83 EC ?? 48 8D 0D ?? ?? ?? ?? E8 ?? ?? ?? ?? 84 C0 74 ?? B8";

@@ -5,9 +5,9 @@ using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.System.Input;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Component.GUI;
-using MouseLock.MouseLook.Actions;
+using MouseLock.Actions;
+using MouseLock.Compatibility;
 using MouseLock.MouseLook.Activation;
-using MouseLock.MouseLook.Compatibility;
 using MouseLock.MouseLook.Native;
 
 namespace MouseLock.MouseLook;
@@ -17,16 +17,16 @@ public sealed class MouseLookService : IDisposable
     private readonly ChatTwoTypingState _chatTwoTypingState;
     private readonly CursorOverlayCompatibilityState _cursorOverlayCompatibilityState = new();
     private readonly MouseLookActivationRules _activationRules;
-    private readonly NativeCursorVisibilityState _nativeCursorVisibilityState = new();
-    private readonly NativeCursorRecenterState _nativeCursorRecenterState = new();
-    private readonly NativeMouseDragState _nativeMouseDragState = new();
+    private readonly CursorVisibilityState _cursorVisibilityState = new();
+    private readonly CursorRecenterState _cursorRecenterState = new();
+    private readonly MouseDragState _mouseDragState = new();
     private readonly MouseButtonActionExecutor _mouseButtonActionExecutor = new();
 
     private Hook<AtkModuleHandleInputDelegate>? _atkModuleHandleInputHook;
     private Hook<CameraInputSourceDelegate>? _cameraInputSourceHook;
     private bool _nativeTextInputActive;
 
-    public bool IsActive => _nativeMouseDragState.IsActive || _nativeCursorVisibilityState.IsActive || _nativeCursorRecenterState.IsActive;
+    public bool IsActive => _mouseDragState.IsActive || _cursorVisibilityState.IsActive || _cursorRecenterState.IsActive;
 
     public MouseLookService()
     {
@@ -52,9 +52,9 @@ public sealed class MouseLookService : IDisposable
         var inputData = UIInputData.Instance();
         if (inputData is null)
         {
-            _nativeMouseDragState.DeactivateWithoutRelease();
-            _nativeCursorVisibilityState.Release();
-            _nativeCursorRecenterState.Release(restoreCursor: false);
+            _mouseDragState.DeactivateWithoutRelease();
+            _cursorVisibilityState.Release();
+            _cursorRecenterState.Release(restoreCursor: false);
             _cursorOverlayCompatibilityState.Reset();
             return;
         }
@@ -91,9 +91,9 @@ public sealed class MouseLookService : IDisposable
         var result = _atkModuleHandleInputHook!.Original(atkModule, inputData, isPadMouseModeEnabled);
         if (inputData is null)
         {
-            _nativeMouseDragState.DeactivateWithoutRelease();
-            _nativeCursorVisibilityState.Release();
-            _nativeCursorRecenterState.Release(restoreCursor: false);
+            _mouseDragState.DeactivateWithoutRelease();
+            _cursorVisibilityState.Release();
+            _cursorRecenterState.Release(restoreCursor: false);
             _cursorOverlayCompatibilityState.Reset();
             return result;
         }
@@ -118,9 +118,9 @@ public sealed class MouseLookService : IDisposable
             var inputData = UIInputData.Instance();
             if (inputData is null)
             {
-                _nativeMouseDragState.DeactivateWithoutRelease();
-                _nativeCursorVisibilityState.Release();
-                _nativeCursorRecenterState.Release(restoreCursor: false);
+                _mouseDragState.DeactivateWithoutRelease();
+                _cursorVisibilityState.Release();
+                _cursorRecenterState.Release(restoreCursor: false);
                 _cursorOverlayCompatibilityState.Reset();
                 return _cameraInputSourceHook!.Original();
             }
@@ -168,10 +168,10 @@ public sealed class MouseLookService : IDisposable
         _cursorOverlayCompatibilityState.Release(inputData);
         var physicalHeldButtons = inputData->CursorInputs.MouseButtonHeldFlags & MouseLookButtons.PhysicalLookButtons;
 
-        _nativeCursorRecenterState.Apply(inputData, applyScheduledMoveCompensation);
+        _cursorRecenterState.Apply(inputData, applyScheduledMoveCompensation);
         MouseButtonSuppressionState.Apply(inputData);
-        _nativeMouseDragState.Apply(inputData);
-        _nativeCursorVisibilityState.Apply();
+        _mouseDragState.Apply(inputData);
+        _cursorVisibilityState.Apply();
 
         if (applyCursorOverlayCompatibility)
         {
@@ -193,9 +193,9 @@ public sealed class MouseLookService : IDisposable
     private unsafe void ReleaseMouseLook(UIInputData* inputData)
     {
         _mouseButtonActionExecutor.ReleaseAll(inputData);
-        _nativeMouseDragState.Release(inputData);
-        _nativeCursorVisibilityState.Release();
-        _nativeCursorRecenterState.Release(inputData, restoreCursor: inputData->CursorInputs.IsGameWindowFocused);
+        _mouseDragState.Release(inputData);
+        _cursorVisibilityState.Release();
+        _cursorRecenterState.Release(inputData, restoreCursor: inputData->CursorInputs.IsGameWindowFocused);
         _cursorOverlayCompatibilityState.Release(inputData);
     }
 
@@ -208,9 +208,9 @@ public sealed class MouseLookService : IDisposable
             return;
         }
 
-        _nativeMouseDragState.DeactivateWithoutRelease();
-        _nativeCursorVisibilityState.Release();
-        _nativeCursorRecenterState.Release(restoreCursor: true);
+        _mouseDragState.DeactivateWithoutRelease();
+        _cursorVisibilityState.Release();
+        _cursorRecenterState.Release(restoreCursor: true);
         _cursorOverlayCompatibilityState.Reset();
     }
 
@@ -241,7 +241,7 @@ public sealed class MouseLookService : IDisposable
 
     private void EnableCameraInputSourceHook()
     {
-        if (!Service.SigScanner.TryScanText(NativeMouseLookSignatures.CameraInputSource, out var address) ||
+        if (!Service.SigScanner.TryScanText(MouseLookSignatures.CameraInputSource, out var address) ||
             address == 0)
         {
             Service.Logger.Error("Could not hook camera input source");

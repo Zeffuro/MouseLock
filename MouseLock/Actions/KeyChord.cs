@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using FFXIVClientStructs.FFXIV.Client.System.Input;
 
-namespace MouseLock.MouseLook.Actions;
+namespace MouseLock.Actions;
 
 internal readonly struct KeyChord(SeVirtualKey primaryKey, KeyModifierFlag modifier) : IEquatable<KeyChord>
 {

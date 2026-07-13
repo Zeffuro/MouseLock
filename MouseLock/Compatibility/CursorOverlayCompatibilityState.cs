@@ -1,7 +1,8 @@
 using FFXIVClientStructs.FFXIV.Client.System.Input;
 using FFXIVClientStructs.FFXIV.Client.UI;
+using MouseLock.MouseLook;
 
-namespace MouseLock.MouseLook.Compatibility;
+namespace MouseLock.Compatibility;
 
 internal sealed class CursorOverlayCompatibilityState
 {

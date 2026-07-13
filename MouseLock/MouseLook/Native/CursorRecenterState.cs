@@ -5,7 +5,7 @@ using FFXIVClientStructs.FFXIV.Component.GUI;
 
 namespace MouseLock.MouseLook.Native;
 
-internal sealed unsafe class NativeCursorRecenterState
+internal sealed unsafe class CursorRecenterState
 {
     private readonly delegate* unmanaged<int, int, void> _scheduleCursorMove;
 
@@ -17,23 +17,23 @@ internal sealed unsafe class NativeCursorRecenterState
     private int _scheduledCursorMoveDeltaX;
     private int _scheduledCursorMoveDeltaY;
 
-    public NativeCursorRecenterState()
+    public CursorRecenterState()
     {
         try
         {
-            if (!Service.SigScanner.TryScanText(NativeMouseLookSignatures.ScheduleCursorMove, out var address) ||
+            if (!Service.SigScanner.TryScanText(MouseLookSignatures.ScheduleCursorMove, out var address) ||
                 address == 0)
             {
-                Service.Logger.Error("Could not resolve native cursor move scheduler.");
+                Service.Logger.Error("Could not resolve cursor move scheduler.");
                 return;
             }
 
             _scheduleCursorMove = (delegate* unmanaged<int, int, void>)address;
-            Service.Logger.Information("Resolved native cursor move scheduler at 0x{Address:X}.", address);
+            Service.Logger.Information("Resolved cursor move scheduler at 0x{Address:X}.", address);
         }
         catch (Exception ex)
         {
-            Service.Logger.Error(ex, "Could not resolve native cursor move scheduler.");
+            Service.Logger.Error(ex, "Could not resolve cursor move scheduler.");
         }
     }
 

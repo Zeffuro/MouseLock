@@ -2,7 +2,7 @@ using FFXIVClientStructs.FFXIV.Client.System.Input;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using MouseLock.Configuration;
 
-namespace MouseLock.MouseLook.Actions;
+namespace MouseLock.Actions;
 
 internal sealed unsafe class ButtonGameInputState
 {

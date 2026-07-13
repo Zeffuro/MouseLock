@@ -4,14 +4,14 @@ using FFXIVClientStructs.FFXIV.Client.UI;
 
 namespace MouseLock.MouseLook.Native;
 
-internal sealed unsafe class NativeMouseDragState
+internal sealed unsafe class MouseDragState
 {
     // The game checks how many pixels the mouse has been moved and will treat it as a click if it's 10 pixels or under.
     private const float NativeClickSuppressionDragDistance = 11.0f;
 
     private readonly NativeInputManager* _inputManager;
 
-    public NativeMouseDragState()
+    public MouseDragState()
     {
         try
         {

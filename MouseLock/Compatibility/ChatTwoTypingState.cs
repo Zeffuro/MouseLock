@@ -1,8 +1,7 @@
 using System;
-using System.Runtime.CompilerServices;
 using Dalamud.Plugin.Ipc;
 
-namespace MouseLock.MouseLook.Activation;
+namespace MouseLock.Compatibility;
 
 internal sealed class ChatTwoTypingState : IDisposable
 {
@@ -55,6 +54,6 @@ internal sealed class ChatTwoTypingState : IDisposable
 
     private void OnChatInputStateChanged(object state)
     {
-        _inputFocused = state is ITuple { Length: > 1 } tuple && tuple[1] is true;
+        _inputFocused = state is (string, true);
     }
 }
