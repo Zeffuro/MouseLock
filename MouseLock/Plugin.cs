@@ -5,8 +5,10 @@ using Dalamud.Interface.Windowing;
 using MouseLock.Windows;
 using MouseLock.Configuration.Persistence;
 using MouseLock.Commands;
+using MouseLock.Input;
+using MouseLock.Input.Keybinds;
 using MouseLock.MouseLook;
-using MouseLock.Services;
+using MouseLock.UI;
 
 namespace MouseLock;
 
@@ -32,9 +34,10 @@ public sealed class Plugin : IAsyncDalamudPlugin
         Service.PluginInterface.UiBuilder.OpenConfigUi += ToggleUi;
 
         PluginState.CommandHandler = new CommandHandler();
-        PluginState.MouseLookService = new MouseLookService();
-        PluginState.ToggleKeybindService = new ToggleKeybindService();
-        PluginState.DtrService = new DtrService();
+        PluginState.TextInputMonitor = new TextInputMonitor();
+        PluginState.MouseLookService = new MouseLookService(PluginState.TextInputMonitor);
+        PluginState.ToggleKeybindListener = new ToggleKeybindListener(PluginState.TextInputMonitor);
+        PluginState.DtrStatusService = new DtrStatusService();
         PluginState.IpcProvider = new();
 
         ConfigRepository.SaveImmediate(PluginState.Config);
@@ -46,20 +49,19 @@ public sealed class Plugin : IAsyncDalamudPlugin
         PluginState.IpcProvider?.Dispose();
         PluginState.CommandHandler?.Dispose();
         PluginState.MouseLookService?.Dispose();
-        PluginState.ToggleKeybindService?.Dispose();
-        PluginState.DtrService?.Dispose();
+        PluginState.ToggleKeybindListener?.Dispose();
+        PluginState.TextInputMonitor?.Dispose();
+        PluginState.DtrStatusService?.Dispose();
 
         Service.PluginInterface.UiBuilder.Draw -= DrawUi;
         Service.PluginInterface.UiBuilder.OpenMainUi -= ToggleUi;
         Service.PluginInterface.UiBuilder.OpenConfigUi -= ToggleUi;
 
         PluginState.WindowSystem?.RemoveAllWindows();
-        PluginState.ConfigWindow?.Dispose();
 
         ConfigRepository.SaveImmediate(PluginState.Config);
 
         PluginState.Reset();
-
         return ValueTask.CompletedTask;
     }
 

@@ -37,6 +37,7 @@ internal static class ConfigPorter
         target.CopyFrom(imported);
         ConfigRepository.SaveImmediate(target);
         PluginState.MouseLookService?.RefreshCurrentStatus();
+        PluginState.DtrStatusService?.Refresh();
 
         message = "Configuration imported from clipboard.";
         Service.Logger.Information(message);
@@ -53,6 +54,7 @@ internal static class ConfigPorter
             target.CopyFrom(reset);
             ConfigRepository.SaveImmediate(target);
             PluginState.MouseLookService?.RefreshCurrentStatus();
+            PluginState.DtrStatusService?.Refresh();
 
             message = "Configuration reset to defaults.";
             Service.Logger.Information(message);
@@ -85,6 +87,7 @@ internal static class ConfigPorter
             target.CopyFrom(backupConfig);
             ConfigRepository.SaveImmediate(target);
             PluginState.MouseLookService?.RefreshCurrentStatus();
+            PluginState.DtrStatusService?.Refresh();
 
             message = "Latest backup restored.";
             Service.Logger.Information(message);

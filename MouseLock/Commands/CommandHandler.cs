@@ -3,13 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Dalamud.Game.Command;
-using MouseLock.Compatibility;
 using MouseLock.Configuration;
+using MouseLock.MouseLook;
 using MouseLock.MouseLook.Activation;
 
 namespace MouseLock.Commands;
 
-public sealed class CommandHandler : IDisposable
+internal sealed class CommandHandler : IDisposable
 {
     private const string MainCommand = "/mouselock";
     private const string HelpDescription = "MouseLock command. Use '/mouselock help' for options.";
@@ -46,7 +46,7 @@ public sealed class CommandHandler : IDisposable
         var parts = args.Trim().Split(' ', 2, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         if (parts.Length == 0)
         {
-            HandleDefaultCommand();
+            PluginState.ConfigWindow.Toggle();
             return;
         }
 
@@ -62,25 +62,15 @@ public sealed class CommandHandler : IDisposable
         PrintChat($"Unknown command: {subCommandName}. Use '{MainCommand} help' for available commands.");
     }
 
-    private static void HandleDefaultCommand()
-    {
-        ToggleConfig();
-    }
-
-    private static void ToggleConfig()
-    {
-        PluginState.ConfigWindow.Toggle();
-    }
-
     private static void SetEnabled(bool enabled)
     {
-        MouseLockSettingsActions.SetEnabled(enabled);
+        MouseLockStateController.SetEnabled(enabled);
         PrintStatus();
     }
 
     private static void ToggleEnabled()
     {
-        MouseLockSettingsActions.ToggleEnabled();
+        MouseLockStateController.ToggleEnabled();
         PrintStatus();
     }
 
@@ -88,7 +78,7 @@ public sealed class CommandHandler : IDisposable
     {
         var status = PluginState.MouseLookService?.Status
                      ?? MouseLookStatus.Unavailable(MouseLookPauseReason.HookUnavailable);
-        PrintChat($"{status.Summary} - {status.Detail}");
+        PrintChat($"{MouseLookStatusFormatter.GetSummary(status)} - {MouseLookStatusFormatter.GetDetail(status)}");
     }
 
     private static void HandleSuspend(string args)
@@ -96,7 +86,7 @@ public sealed class CommandHandler : IDisposable
         var parts = args.Trim().Split(' ', 2, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         if (parts.Length == 0)
         {
-            SetSuspended(DefaultCommandSuspensionSource, !ExternalSuspensionState.IsSuspendedBy(DefaultCommandSuspensionSource));
+            SetSuspended(DefaultCommandSuspensionSource, !SuspensionRegistry.IsSuspendedBy(DefaultCommandSuspensionSource));
             return;
         }
 
@@ -131,7 +121,7 @@ public sealed class CommandHandler : IDisposable
 
     private static void SetSuspended(string source, bool suspended)
     {
-        ExternalSuspensionState.SetSuspended(source, suspended);
+        SuspensionRegistry.SetSuspended(source, suspended);
         PluginState.MouseLookService?.RefreshCurrentStatus();
         PrintChat(suspended
             ? $"Suspended by {source}."
@@ -141,7 +131,7 @@ public sealed class CommandHandler : IDisposable
 
     private static void ClearSuspensions()
     {
-        var clearedCount = ExternalSuspensionState.Clear();
+        var clearedCount = SuspensionRegistry.Clear();
         PluginState.MouseLookService?.RefreshCurrentStatus();
         PrintChat($"Cleared {clearedCount} suspension source(s).");
         PrintSuspensionStatus();
@@ -149,8 +139,8 @@ public sealed class CommandHandler : IDisposable
 
     private static void PrintSuspensionStatus()
     {
-        PrintChat(ExternalSuspensionState.IsSuspended
-            ? $"Suspended by: {ExternalSuspensionState.SourcesSummary}"
+        PrintChat(SuspensionRegistry.IsSuspended
+            ? $"Suspended by: {SuspensionRegistry.SourcesSummary}"
             : "No external suspensions are active.");
     }
 

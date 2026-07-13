@@ -10,17 +10,24 @@ internal sealed unsafe class CursorVisibilityState
 
     public void Apply()
     {
-        var cursor = AtkStage.Instance()->AtkCursor;
+        var stage = AtkStage.Instance();
+        if (stage is null)
+        {
+            Reset();
+            return;
+        }
+
+        var cursor = &stage->AtkCursor;
 
         if (!IsActive)
         {
-            _restoreVisible = cursor.IsVisible;
+            _restoreVisible = cursor->IsVisible;
             IsActive = true;
         }
 
-        if (cursor.IsVisible)
+        if (cursor->IsVisible)
         {
-            cursor.SetVisible(false);
+            cursor->SetVisible(false);
         }
     }
 
@@ -31,10 +38,10 @@ internal sealed unsafe class CursorVisibilityState
             return;
         }
 
-        var cursor = AtkStage.Instance()->AtkCursor;
-        if (_restoreVisible)
+        var stage = AtkStage.Instance();
+        if (stage is not null && _restoreVisible)
         {
-            cursor.SetVisible(true);
+            stage->AtkCursor.SetVisible(true);
         }
 
         Reset();

@@ -9,13 +9,13 @@ internal sealed unsafe class MouseDragState
     // The game checks how many pixels the mouse has been moved and will treat it as a click if it's 10 pixels or under.
     private const float NativeClickSuppressionDragDistance = 11.0f;
 
-    private readonly NativeInputManager* _inputManager;
+    private readonly InputManagerMouseDragLayout* _inputManager;
 
     public MouseDragState()
     {
         try
         {
-            _inputManager = (NativeInputManager*)InputManager.Instance();
+            _inputManager = (InputManagerMouseDragLayout*)InputManager.Instance();
             if (_inputManager is null)
             {
                 Service.Logger.Error("Could not resolve InputManager instance.");
@@ -56,19 +56,30 @@ internal sealed unsafe class MouseDragState
             return;
         }
 
-        _inputManager->MouseButtonHoldState = InputManager.MouseButtonHoldState.None;
-        _inputManager->MouseDragDistance = 0;
-        _inputManager->MouseDeltaX = 0;
-        _inputManager->MouseDeltaY = 0;
-        _inputManager->MouseDragStartX = inputData->CursorInputs.PositionX;
-        _inputManager->MouseDragStartY = inputData->CursorInputs.PositionY;
-        _inputManager->MouseDragActive = 0;
+        ReleaseNativeState(inputData->CursorInputs.PositionX, inputData->CursorInputs.PositionY);
+    }
+
+    public void Release()
+    {
+        if (_inputManager is not null && IsActive)
+        {
+            ReleaseNativeState(0, 0);
+            return;
+        }
 
         IsActive = false;
     }
 
-    public void DeactivateWithoutRelease()
+    private void ReleaseNativeState(int startX, int startY)
     {
+        _inputManager->MouseButtonHoldState = InputManager.MouseButtonHoldState.None;
+        _inputManager->MouseDragDistance = 0;
+        _inputManager->MouseDeltaX = 0;
+        _inputManager->MouseDeltaY = 0;
+        _inputManager->MouseDragStartX = startX;
+        _inputManager->MouseDragStartY = startY;
+        _inputManager->MouseDragActive = 0;
+
         IsActive = false;
     }
 }

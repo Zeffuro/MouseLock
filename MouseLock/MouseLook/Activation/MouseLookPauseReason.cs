@@ -30,4 +30,5 @@ internal enum MouseLookPauseReason
     WaitingForWorldClick,
     InputUnavailable,
     HookUnavailable,
+    NativeSubsystemUnavailable,
 }

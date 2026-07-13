@@ -25,6 +25,14 @@ internal static unsafe class NativeUiState
     public static bool IsBlockingAddonHovered(UIInputData* inputData)
         => TryGetHoveredBlockingAddonName(inputData, out _);
 
+    public static bool IsAnyUiNodeHovered()
+    {
+        var stage = AtkStage.Instance();
+        return stage is not null &&
+               stage->AtkInputManager is not null &&
+               stage->AtkInputManager->FocusedNode is not null;
+    }
+
     public static bool TryGetFocusedBlockingAddonName(out string addonName)
     {
         addonName = string.Empty;
@@ -70,14 +78,12 @@ internal static unsafe class NativeUiState
             return true;
         }
 
-        var stage = AtkStage.Instance();
-        if (stage is null || stage->AtkInputManager is null || stage->AtkInputManager->FocusedNode is null)
+        if (!IsAnyUiNodeHovered())
         {
             return false;
         }
 
-        _ = TryGetFocusedBlockingAddonName(out addonName);
-        return true;
+        return TryGetFocusedBlockingAddonName(out addonName);
     }
 
     private static bool IsBlockingAddon(AtkUnitBase* addon)

@@ -39,6 +39,8 @@ internal sealed unsafe class CursorRecenterState
 
     public bool IsActive { get; private set; }
 
+    public bool IsAvailable => _scheduleCursorMove != null;
+
     public void Apply(
         UIInputData* inputData,
         bool applyScheduledMoveCompensation,

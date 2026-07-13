@@ -1,7 +1,7 @@
 using System;
 using Dalamud.Plugin.Ipc;
-using MouseLock.Compatibility;
 using MouseLock.Configuration;
+using MouseLock.MouseLook;
 using MouseLock.MouseLook.Activation;
 
 namespace MouseLock.Ipc;
@@ -86,43 +86,43 @@ internal sealed class MouseLockIpcProvider : IDisposable
 
     private static bool IsMouseLookActive() => PluginState.MouseLookService is { IsActive: true };
 
-    private static string GetStatus() => CurrentStatus().IpcStatus;
+    private static string GetStatus() => MouseLookStatusIpcFormatter.GetStatus(CurrentStatus());
 
-    private static string GetPauseReason() => CurrentStatus().ReasonLabel;
+    private static string GetPauseReason() => MouseLookStatusIpcFormatter.GetPauseReason(CurrentStatus());
 
-    private static bool IsSuspended() => ExternalSuspensionState.IsSuspended;
+    private static bool IsSuspended() => SuspensionRegistry.IsSuspended;
 
-    private static string GetSuspensionSources() => ExternalSuspensionState.SourcesSummary;
+    private static string GetSuspensionSources() => SuspensionRegistry.SourcesSummary;
 
     private static bool SetEnabled(bool enabled)
     {
-        MouseLockSettingsActions.SetEnabled(enabled);
+        MouseLockStateController.SetEnabled(enabled);
         return IsEnabled();
     }
 
     private static bool ToggleEnabled()
     {
-        MouseLockSettingsActions.ToggleEnabled();
+        MouseLockStateController.ToggleEnabled();
         return IsEnabled();
     }
 
     private static bool SetSuspended(string source, bool suspended)
     {
-        var isSuspended = ExternalSuspensionState.SetSuspended(source, suspended);
+        var isSuspended = SuspensionRegistry.SetSuspended(source, suspended);
         PluginState.MouseLookService?.RefreshCurrentStatus();
         return isSuspended;
     }
 
     private static int ClearSuspensions()
     {
-        var clearedCount = ExternalSuspensionState.Clear();
+        var clearedCount = SuspensionRegistry.Clear();
         PluginState.MouseLookService?.RefreshCurrentStatus();
         return clearedCount;
     }
 
     private void OnStatusChanged(MouseLookStatus status)
     {
-        _stateChangedProvider.SendMessage(status.IpcStatus);
+        _stateChangedProvider.SendMessage(MouseLookStatusIpcFormatter.GetStatus(status));
     }
 
     private static MouseLookStatus CurrentStatus()

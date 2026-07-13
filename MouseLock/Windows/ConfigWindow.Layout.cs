@@ -5,22 +5,22 @@ using Dalamud.Interface.Utility.Raii;
 
 namespace MouseLock.Windows;
 
-public sealed partial class ConfigWindow
+internal sealed partial class ConfigWindow
 {
-    private static void DrawSection(string title)
+    internal static void DrawSection(string title)
     {
         ImGui.Spacing();
         ImGui.Separator();
         ImGui.TextUnformatted(title);
     }
 
-    private static bool DrawNestedCheckbox(string label, ref bool value, int depth = 1)
+    internal static bool DrawNestedCheckbox(string label, ref bool value, int depth = 1)
     {
         DrawNestIndicator(depth);
         return ImGui.Checkbox(label, ref value);
     }
 
-    private static void DrawTooltip(string text)
+    internal static void DrawTooltip(string text)
     {
         if (ImGui.IsItemHovered())
         {
@@ -28,13 +28,13 @@ public sealed partial class ConfigWindow
         }
     }
 
-    private static void DrawDisabled(bool disabled, Action draw)
+    internal static void DrawDisabled(bool disabled, Action draw)
     {
         using var disabledScope = ImRaii.Disabled(disabled);
         draw();
     }
 
-    private static void DrawNestIndicator(int depth)
+    internal static void DrawNestIndicator(int depth)
     {
         var frameHeight = ImGui.GetFrameHeight();
         var width = frameHeight * Math.Max(depth, 1);
@@ -56,4 +56,7 @@ public sealed partial class ConfigWindow
         ImGui.Dummy(new Vector2(width + ImGui.GetStyle().ItemInnerSpacing.X, frameHeight));
         ImGui.SameLine();
     }
+
+    internal static string DisplayAddonName(string addonName)
+        => string.IsNullOrEmpty(addonName) ? "None" : addonName;
 }

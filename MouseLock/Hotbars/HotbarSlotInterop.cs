@@ -19,7 +19,7 @@ internal static unsafe class HotbarSlotInterop
         }
 
         var hotbarSlot = module->GetSlotById((uint)(hotbar - 1), (uint)(slot - 1));
-        if (hotbarSlot->IsEmpty)
+        if (hotbarSlot is null || hotbarSlot->IsEmpty)
         {
             return false;
         }

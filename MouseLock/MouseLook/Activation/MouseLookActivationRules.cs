@@ -1,30 +1,28 @@
-using Dalamud.Bindings.ImGui;
 using Dalamud.Game.ClientState.Conditions;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.System.Input;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
-using MouseLock.Actions;
-using MouseLock.Compatibility;
 using MouseLock.Configuration;
 using MouseLock.Game;
+using MouseLock.Input;
+using MouseLock.Input.MouseActions;
+using MouseLock.Integrations;
 using MouseLock.MouseLook;
 
 namespace MouseLock.MouseLook.Activation;
 
-internal sealed class MouseLookActivationRules(ChatTwoTypingState chatTwoTypingState)
+internal sealed class MouseLookActivationRules(TextInputMonitor textInputMonitor)
 {
     public unsafe bool ShouldLock(
         UIInputData* inputData,
-        AtkModule* atkModule = null,
-        bool nativeTextInputActive = false)
-        => Evaluate(inputData, atkModule, nativeTextInputActive).ShouldLock;
+        AtkModule* atkModule = null)
+        => Evaluate(inputData, atkModule).ShouldLock;
 
     public unsafe MouseLookDecision Evaluate(
         UIInputData* inputData,
-        AtkModule* atkModule = null,
-        bool nativeTextInputActive = false)
+        AtkModule* atkModule = null)
     {
         if (!PluginState.Config.General.Enabled)
         {
@@ -97,7 +95,7 @@ internal sealed class MouseLookActivationRules(ChatTwoTypingState chatTwoTypingS
             return MouseLookDecision.Pause(MouseLookPauseReason.CombatRequired);
         }
 
-        if (conditions.DisableWhileTextInputActive && IsAnyTextInputActive(atkModule, nativeTextInputActive))
+        if (conditions.DisableWhileTextInputActive && textInputMonitor.IsTextInputActive(atkModule))
         {
             return MouseLookDecision.Pause(MouseLookPauseReason.TextInput);
         }
@@ -122,12 +120,12 @@ internal sealed class MouseLookActivationRules(ChatTwoTypingState chatTwoTypingS
         }
 
         if (PluginState.Config.General.Compatibility.DisableDuringTPieRing &&
-            TPieCompatibilityState.IsRingActive())
+            TPieIntegration.IsRingActive())
         {
             return MouseLookDecision.Pause(MouseLookPauseReason.TPie);
         }
 
-        if (ExternalSuspensionState.IsSuspended)
+        if (SuspensionRegistry.IsSuspended)
         {
             return MouseLookDecision.Pause(MouseLookPauseReason.ExternalSuspension);
         }
@@ -192,26 +190,6 @@ internal sealed class MouseLookActivationRules(ChatTwoTypingState chatTwoTypingS
         => Service.Condition.Any(
             ConditionFlag.BetweenAreas,
             ConditionFlag.BetweenAreas51);
-
-    private unsafe bool IsAnyTextInputActive(AtkModule* atkModule, bool nativeTextInputActive)
-    {
-        if (nativeTextInputActive)
-        {
-            return true;
-        }
-
-        if (atkModule is not null && atkModule->IsTextInputActive())
-        {
-            return true;
-        }
-
-        if (ImGui.GetIO().WantTextInput)
-        {
-            return true;
-        }
-
-        return chatTwoTypingState.IsInputFocused;
-    }
 
     private static unsafe bool IsTemporaryReleaseActionHeld(UIInputData* inputData)
     {

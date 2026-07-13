@@ -2,9 +2,11 @@ using Dalamud.Interface.Windowing;
 using MouseLock.Windows;
 using MouseLock.Configuration;
 using MouseLock.Commands;
+using MouseLock.Input;
+using MouseLock.Input.Keybinds;
 using MouseLock.Ipc;
 using MouseLock.MouseLook;
-using MouseLock.Services;
+using MouseLock.UI;
 
 namespace MouseLock;
 
@@ -14,15 +16,17 @@ public static class PluginState
 
     public static WindowSystem WindowSystem { get; set; } = null!;
 
-    public static ConfigWindow ConfigWindow { get; set; } = null!;
+    internal static ConfigWindow ConfigWindow { get; set; } = null!;
 
-    public static CommandHandler? CommandHandler { get; set; }
+    internal static CommandHandler? CommandHandler { get; set; }
 
-    public static MouseLookService? MouseLookService { get; set; }
+    internal static TextInputMonitor? TextInputMonitor { get; set; }
 
-    public static ToggleKeybindService? ToggleKeybindService { get; set; }
+    internal static MouseLookService? MouseLookService { get; set; }
 
-    public static DtrService? DtrService { get; set; }
+    internal static ToggleKeybindListener? ToggleKeybindListener { get; set; }
+
+    internal static DtrStatusService? DtrStatusService { get; set; }
 
     internal static MouseLockIpcProvider? IpcProvider { get; set; }
 
@@ -32,9 +36,10 @@ public static class PluginState
         WindowSystem = null!;
         ConfigWindow = null!;
         CommandHandler = null;
+        TextInputMonitor = null;
         MouseLookService = null;
-        ToggleKeybindService = null;
-        DtrService = null;
+        ToggleKeybindListener = null;
+        DtrStatusService = null;
         IpcProvider = null;
     }
 }
