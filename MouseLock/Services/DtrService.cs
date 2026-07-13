@@ -2,36 +2,37 @@ using System;
 using Dalamud.Game.Gui.Dtr;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Plugin.Services;
+using MouseLock.Configuration;
 
-namespace MouseLock;
+namespace MouseLock.Services;
 
 public sealed class DtrService : IDisposable
 {
     private const string EntryTitle = "MouseLock";
 
-    private IDtrBarEntry? dtrEntry;
-    private DateTime lastUpdate = DateTime.MinValue;
+    private IDtrBarEntry? _dtrEntry;
+    private DateTime _lastUpdate = DateTime.MinValue;
 
     public DtrService()
     {
-        Services.Framework.Update += this.OnFrameworkUpdate;
+        Service.Framework.Update += OnFrameworkUpdate;
     }
 
     public void Dispose()
     {
-        Services.Framework.Update -= this.OnFrameworkUpdate;
-        this.RemoveEntry();
+        Service.Framework.Update -= OnFrameworkUpdate;
+        RemoveEntry();
     }
 
     private void OnFrameworkUpdate(IFramework framework)
     {
-        if ((DateTime.Now - this.lastUpdate).TotalMilliseconds < 500)
+        if ((DateTime.Now - _lastUpdate).TotalMilliseconds < 500)
         {
             return;
         }
 
-        this.lastUpdate = DateTime.Now;
-        this.UpdateBar();
+        _lastUpdate = DateTime.Now;
+        UpdateBar();
     }
 
     private void UpdateBar()
@@ -39,59 +40,65 @@ public sealed class DtrService : IDisposable
         var settings = System.Config.Dtr;
         if (!settings.Enabled)
         {
-            this.RemoveEntry();
+            RemoveEntry();
             return;
         }
 
-        this.EnsureEntry();
-        if (this.dtrEntry is null)
+        EnsureEntry();
+        if (_dtrEntry is null)
         {
             return;
         }
 
-        if (!Services.ClientState.IsLoggedIn && !settings.ShowWhenLoggedOut)
+        if (!Service.ClientState.IsLoggedIn && !settings.ShowWhenLoggedOut)
         {
-            this.dtrEntry.Shown = false;
+            _dtrEntry.Shown = false;
             return;
         }
 
-        this.dtrEntry.Text = new SeStringBuilder().AddText(settings.Text).Build();
-        this.dtrEntry.Tooltip = new SeStringBuilder().AddText(settings.Tooltip).Build();
-        this.dtrEntry.Shown = true;
+        _dtrEntry.Text = new SeStringBuilder().AddText(GetStatusText()).Build();
+        _dtrEntry.Tooltip = new SeStringBuilder().AddText("Click to enable or disable MouseLock.").Build();
+        _dtrEntry.Shown = true;
     }
 
     private void EnsureEntry()
     {
-        if (this.dtrEntry is not null)
+        if (_dtrEntry is not null)
         {
             return;
         }
 
-        this.dtrEntry = Services.DtrBar.Get(EntryTitle);
-        this.dtrEntry.Shown = true;
-        this.dtrEntry.OnClick += OnDtrClick;
+        _dtrEntry = Service.DtrBar.Get(EntryTitle);
+        _dtrEntry.Shown = true;
+        _dtrEntry.OnClick += OnDtrClick;
     }
 
     private void RemoveEntry()
     {
-        if (this.dtrEntry is null)
+        if (_dtrEntry is null)
         {
             return;
         }
 
-        this.dtrEntry.OnClick -= OnDtrClick;
-        this.dtrEntry.Remove();
-        this.dtrEntry = null;
+        _dtrEntry.OnClick -= OnDtrClick;
+        _dtrEntry.Remove();
+        _dtrEntry = null;
     }
 
     private static void OnDtrClick(DtrInteractionEvent interaction)
     {
-        if (System.Config.Dtr.ClickToOpenConfig)
+        MouseLockSettingsActions.ToggleEnabled();
+    }
+
+    private static string GetStatusText()
+    {
+        if (!System.Config.General.Enabled)
         {
-            System.ConfigWindow.Toggle();
-            return;
+            return "MouseLock: Off";
         }
 
-        System.MainWindow.Toggle();
+        return System.MouseLookService?.IsActive == true
+            ? "MouseLock: Active"
+            : "MouseLock: On";
     }
 }

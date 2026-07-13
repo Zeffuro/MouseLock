@@ -75,7 +75,7 @@ public static class ConfigBackup
         }
         catch (Exception exception)
         {
-            Services.Logger.Warning(exception, "Configuration backup skipped.");
+            Service.Logger.Warning(exception, "Configuration backup skipped.");
         }
     }
 

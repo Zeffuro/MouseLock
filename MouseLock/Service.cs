@@ -4,7 +4,7 @@ using Dalamud.Plugin.Services;
 
 namespace MouseLock;
 
-public sealed class Services
+public sealed class Service
 {
     [PluginService] public static IDalamudPluginInterface PluginInterface { get; private set; } = null!;
 
@@ -13,7 +13,6 @@ public sealed class Services
     [PluginService] public static IGameInteropProvider GameInteropProvider { get; private set; } = null!;
 
     [PluginService] public static ISigScanner SigScanner { get; private set; } = null!;
-
 
     [PluginService] public static ICommandManager CommandManager { get; private set; } = null!;
 
@@ -26,4 +25,6 @@ public sealed class Services
     [PluginService] public static IClientState ClientState { get; private set; } = null!;
 
     [PluginService] public static IKeyState KeyState { get; private set; } = null!;
+
+    [PluginService] public static ITextureProvider TextureProvider { get; private set; } = null!;
 }

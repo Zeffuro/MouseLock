@@ -6,48 +6,53 @@ namespace MouseLock.Configuration;
 [Serializable]
 public sealed class SystemConfiguration : IPluginConfiguration
 {
-    public const int CurrentVersion = 1;
+    public const int CurrentVersion = 2;
 
     public int Version { get; set; }
 
-    private GeneralSettings general = new();
-    private DtrSettings dtr = new();
+    private GeneralSettings _general = new();
+    private DtrSettings _dtr = new();
 
     public GeneralSettings General
     {
-        get => this.general;
-        set => this.general = value ?? new GeneralSettings();
+        get => _general;
+        set => _general = value ?? new GeneralSettings();
     }
 
     public DtrSettings Dtr
     {
-        get => this.dtr;
-        set => this.dtr = value ?? new DtrSettings();
+        get => _dtr;
+        set => _dtr = value ?? new DtrSettings();
     }
 
     public void EnsureInitialized()
     {
-        this.general ??= new GeneralSettings();
-        this.dtr ??= new DtrSettings();
+        _general ??= new GeneralSettings();
+        _general.EnsureInitialized();
+        _dtr ??= new DtrSettings();
 
-        if (this.Version < CurrentVersion)
+        if (Version < CurrentVersion)
         {
-            this.Migrate();
+            Migrate();
         }
     }
 
     private void Migrate()
     {
-        while (this.Version < CurrentVersion)
+        while (Version < CurrentVersion)
         {
-            switch (this.Version)
+            switch (Version)
             {
                 case <= 0:
-                    this.MigrateFromUnversionedConfig();
-                    this.Version = 1;
+                    MigrateFromUnversionedConfig();
+                    Version = 1;
+                    break;
+                case 1:
+                    MigrateToVersion2();
+                    Version = 2;
                     break;
                 default:
-                    this.Version = CurrentVersion;
+                    Version = CurrentVersion;
                     break;
             }
         }
@@ -55,5 +60,10 @@ public sealed class SystemConfiguration : IPluginConfiguration
 
     private void MigrateFromUnversionedConfig()
     {
+    }
+
+    private void MigrateToVersion2()
+    {
+        _dtr.Enabled = true;
     }
 }

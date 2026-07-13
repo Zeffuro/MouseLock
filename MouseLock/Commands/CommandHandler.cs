@@ -3,32 +3,26 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Dalamud.Game.Command;
-using MouseLock.Configuration.Persistence;
+using MouseLock.Configuration;
 
 namespace MouseLock.Commands;
 
 public sealed class CommandHandler : IDisposable
 {
-    private const string MainCommand = "/MouseLock";
-    private const string HelpDescription = "MouseLock command. Use '/MouseLock help' for options.";
+    private const string MainCommand = "/mouselock";
+    private const string HelpDescription = "MouseLock command. Use '/mouselock help' for options.";
 
-    private readonly Dictionary<string, SubCommand> subCommands;
+    private readonly Dictionary<string, SubCommand> _subCommands;
 
     public CommandHandler()
     {
-        this.subCommands = new Dictionary<string, SubCommand>(StringComparer.OrdinalIgnoreCase)
+        _subCommands = new Dictionary<string, SubCommand>(StringComparer.OrdinalIgnoreCase)
         {
-            ["help"] = new(_ => this.PrintHelp(), "Show this help message"),
-            ["toggle"] = new(_ => ToggleMain(), "Toggle the main window"),
-            ["open"] = new(_ => OpenMain(), "Open the main window"),
-            ["close"] = new(_ => CloseMain(), "Close the main window"),
-            ["config"] = new(_ => ToggleConfig(), "Toggle the configuration window"),
-            ["settings"] = new(_ => ToggleConfig(), "Toggle the configuration window"),
-            ["save"] = new(_ => SaveConfig(), "Save configuration immediately"),
-            ["reset"] = new(_ => ResetConfig(), "Reset configuration to defaults"),
+            ["help"] = new(_ => PrintHelp(), "Show this help message"),
+            ["toggle"] = new(_ => MouseLockSettingsActions.ToggleEnabled(), "Toggle Mouselook"),
         };
 
-        Services.CommandManager.AddHandler(MainCommand, new CommandInfo(this.OnCommand)
+        Service.CommandManager.AddHandler(MainCommand, new CommandInfo(OnCommand)
         {
             DisplayOrder = 1,
             ShowInHelp = true,
@@ -38,7 +32,7 @@ public sealed class CommandHandler : IDisposable
 
     public void Dispose()
     {
-        Services.CommandManager.RemoveHandler(MainCommand);
+        Service.CommandManager.RemoveHandler(MainCommand);
     }
 
     private void OnCommand(string command, string args)
@@ -53,7 +47,7 @@ public sealed class CommandHandler : IDisposable
         var subCommandName = parts[0];
         var subArgs = parts.Length > 1 ? parts[1] : string.Empty;
 
-        if (this.subCommands.TryGetValue(subCommandName, out var subCommand))
+        if (_subCommands.TryGetValue(subCommandName, out var subCommand))
         {
             subCommand.Action(subArgs);
             return;
@@ -67,42 +61,15 @@ public sealed class CommandHandler : IDisposable
         ToggleConfig();
     }
 
-    private static void ToggleMain()
-    {
-        System.MainWindow.Toggle();
-    }
-
-    private static void OpenMain()
-    {
-        System.MainWindow.IsOpen = true;
-    }
-
-    private static void CloseMain()
-    {
-        System.MainWindow.IsOpen = false;
-    }
-
     private static void ToggleConfig()
     {
         System.ConfigWindow.Toggle();
     }
 
-    private static void SaveConfig()
-    {
-        ConfigRepository.SaveImmediate(System.Config);
-        PrintChat("Configuration saved.");
-    }
-
-    private static void ResetConfig()
-    {
-        System.Config = ConfigRepository.Reset();
-        PrintChat("Configuration reset.");
-    }
-
     private void PrintHelp()
     {
         var builder = new StringBuilder("MouseLock Commands:\n");
-        foreach (var (name, subCommand) in this.subCommands.OrderBy(pair => pair.Key))
+        foreach (var (name, subCommand) in _subCommands.OrderBy(pair => pair.Key))
         {
             builder.Append(MainCommand).Append(' ').Append(name);
             if (!string.IsNullOrWhiteSpace(subCommand.Usage))
@@ -118,7 +85,7 @@ public sealed class CommandHandler : IDisposable
 
     private static void PrintChat(string message)
     {
-        Services.ChatGui.Print(message, "MouseLock");
+        Service.ChatGui.Print(message, "MouseLock");
     }
 
     private sealed record SubCommand(Action<string> Action, string Description, string Usage = "");

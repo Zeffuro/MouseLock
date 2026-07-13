@@ -4,11 +4,11 @@ public static class ConfigRepository
 {
     public static SystemConfiguration LoadOrDefault()
     {
-        var config = Services.PluginInterface.GetPluginConfig() as SystemConfiguration ?? new SystemConfiguration();
+        var config = Service.PluginInterface.GetPluginConfig() as SystemConfiguration ?? new SystemConfiguration();
 
         if (config.Version > SystemConfiguration.CurrentVersion)
         {
-            Services.Logger.Warning(
+            Service.Logger.Warning(
                 "Configuration version {ConfigVersion} is newer than the supported version {CurrentVersion}.",
                 config.Version,
                 SystemConfiguration.CurrentVersion);
@@ -33,11 +33,11 @@ public static class ConfigRepository
     {
         if (config is null)
         {
-            Services.Logger.Error("Refusing to save null configuration.");
+            Service.Logger.Error("Refusing to save null configuration.");
             return;
         }
 
         config.EnsureInitialized();
-        Services.PluginInterface.SavePluginConfig(config);
+        Service.PluginInterface.SavePluginConfig(config);
     }
 }

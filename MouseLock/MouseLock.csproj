@@ -1,14 +1,20 @@
 ﻿<Project Sdk="Dalamud.NET.Sdk/15.0.0">
     <PropertyGroup>
         <Version>1.0.0.0</Version>
-        <Authors>Zeffuro</Authors>
-        <RepositoryUrl></RepositoryUrl>
+        <LangVersion>Preview</LangVersion>
+        <DebugType>portable</DebugType>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     </PropertyGroup>
-
-    <Import Project="Build\KamiToolKit.props" Condition="Exists('Build\KamiToolKit.props')"/>
-    <Import Project="Build\KamiToolKit.Components.props" Condition="Exists('Build\KamiToolKit.Components.props')"/>
-    <Import Project="Build\LuminaSupplemental.Excel.props" Condition="Exists('Build\LuminaSupplemental.Excel.props')"/>
-    <Import Project="Build\Lumina.Excel.props" Condition="Exists('Build\Lumina.Excel.props')"/>
-    <Import Project="Build\ManualFFXIVClientStructs.props" Condition="Exists('Build\ManualFFXIVClientStructs.props')"/>
+    <PropertyGroup>
+        <Author>Zeffuro</Author>
+        <Name>MouseLock</Name>
+        <InternalName>MouseLock</InternalName>
+        <Punchline>Mouselook without holding right-click.</Punchline>
+        <Description>Keeps FFXIV in right-click mouselook without requiring you to hold RMB. The cursor stays hidden and centered while locked, then automatically becomes usable again when you open bags, menus, chat, or other game windows.</Description>
+        <RepoUrl>https://github.com/Zeffuro/MouseLock</RepoUrl>
+        <IconUrl>https://raw.githubusercontent.com/Zeffuro/MouseLock/master/Media/icon.png</IconUrl>
+        <ImageUrls></ImageUrls>
+        <Tags>mouse;mouselook;mouse look;cursor;camera;movement;input;keybind;hotbar;qol;utility</Tags>
+        <AcceptsFeedback>true</AcceptsFeedback>
+    </PropertyGroup>
 </Project>
