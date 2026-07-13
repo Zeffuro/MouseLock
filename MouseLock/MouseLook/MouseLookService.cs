@@ -9,7 +9,6 @@ using MouseLock.MouseLook.Actions;
 using MouseLock.MouseLook.Activation;
 using MouseLock.MouseLook.Compatibility;
 using MouseLock.MouseLook.Native;
-using PluginSystem = MouseLock.System;
 
 namespace MouseLock.MouseLook;
 
@@ -139,8 +138,9 @@ public sealed class MouseLookService : IDisposable
             ApplyMouseLook(inputData, applyScheduledMoveCompensation: true, applyCursorOverlayCompatibility: true);
             return 3;
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            Service.Logger.Debug(ex, "MouseLook camera-input detour failed. Falling back to original input source.");
             return _cameraInputSourceHook!.Original();
         }
     }
@@ -181,7 +181,7 @@ public sealed class MouseLookService : IDisposable
 
     private unsafe void ApplyCursorOverlayCompatibility(UIInputData* inputData, MouseButtonFlags physicalHeldButtons)
     {
-        if (!PluginSystem.Config.General.Compatibility.HideCursorOverlayPluginsDuringMouseLook)
+        if (!PluginState.Config.General.Compatibility.HideCursorOverlayPluginsDuringMouseLook)
         {
             _cursorOverlayCompatibilityState.Release(inputData);
             return;

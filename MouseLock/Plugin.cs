@@ -15,53 +15,53 @@ public sealed class Plugin : IAsyncDalamudPlugin
     public Plugin(IDalamudPluginInterface pluginInterface)
     {
         pluginInterface.Create<Service>();
-        System.Reset();
+        PluginState.Reset();
     }
 
     public Task LoadAsync(CancellationToken cancellationToken)
     {
-        System.Config = ConfigRepository.LoadOrDefault();
+        PluginState.Config = ConfigRepository.LoadOrDefault();
         ConfigBackup.DoConfigBackup(Service.PluginInterface);
 
-        System.WindowSystem = new WindowSystem("MouseLock");
-        System.ConfigWindow = new ConfigWindow(System.Config);
-        System.WindowSystem.AddWindow(System.ConfigWindow);
+        PluginState.WindowSystem = new WindowSystem("MouseLock");
+        PluginState.ConfigWindow = new ConfigWindow(PluginState.Config);
+        PluginState.WindowSystem.AddWindow(PluginState.ConfigWindow);
 
         Service.PluginInterface.UiBuilder.Draw += DrawUi;
         Service.PluginInterface.UiBuilder.OpenMainUi += ToggleUi;
         Service.PluginInterface.UiBuilder.OpenConfigUi += ToggleUi;
 
-        System.CommandHandler = new CommandHandler();
-        System.MouseLookService = new MouseLookService();
-        System.ToggleKeybindService = new ToggleKeybindService();
-        System.DtrService = new DtrService();
+        PluginState.CommandHandler = new CommandHandler();
+        PluginState.MouseLookService = new MouseLookService();
+        PluginState.ToggleKeybindService = new ToggleKeybindService();
+        PluginState.DtrService = new DtrService();
 
-        ConfigRepository.SaveImmediate(System.Config);
+        ConfigRepository.SaveImmediate(PluginState.Config);
         return Task.CompletedTask;
     }
 
     public ValueTask DisposeAsync()
     {
-        System.CommandHandler?.Dispose();
-        System.MouseLookService?.Dispose();
-        System.ToggleKeybindService?.Dispose();
-        System.DtrService?.Dispose();
+        PluginState.CommandHandler?.Dispose();
+        PluginState.MouseLookService?.Dispose();
+        PluginState.ToggleKeybindService?.Dispose();
+        PluginState.DtrService?.Dispose();
 
         Service.PluginInterface.UiBuilder.Draw -= DrawUi;
         Service.PluginInterface.UiBuilder.OpenMainUi -= ToggleUi;
         Service.PluginInterface.UiBuilder.OpenConfigUi -= ToggleUi;
 
-        System.WindowSystem?.RemoveAllWindows();
-        System.ConfigWindow?.Dispose();
+        PluginState.WindowSystem?.RemoveAllWindows();
+        PluginState.ConfigWindow?.Dispose();
 
-        ConfigRepository.SaveImmediate(System.Config);
+        ConfigRepository.SaveImmediate(PluginState.Config);
 
-        System.Reset();
+        PluginState.Reset();
 
         return ValueTask.CompletedTask;
     }
 
-    private static void DrawUi() => System.WindowSystem.Draw();
+    private static void DrawUi() => PluginState.WindowSystem.Draw();
 
-    private static void ToggleUi() => System.ConfigWindow.Toggle();
+    private static void ToggleUi() => PluginState.ConfigWindow.Toggle();
 }

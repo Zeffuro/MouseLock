@@ -13,10 +13,10 @@ public sealed partial class ConfigWindow : Window, IDisposable
 
     public ConfigWindow(SystemConfiguration config) : base("MouseLock Config")
     {
-        this._config = config;
+        _config = config;
         SizeConstraints = new WindowSizeConstraints
         {
-            MinimumSize = new Vector2(320.0f, 160.0f),
+            MinimumSize = new Vector2(600.0f, 550.0f),
             MaximumSize = new Vector2(float.MaxValue, float.MaxValue),
         };
     }
@@ -29,14 +29,14 @@ public sealed partial class ConfigWindow : Window, IDisposable
         if (ImGui.Checkbox("Enabled", ref enabled))
         {
             _config.General.Enabled = enabled;
-            ConfigRepository.Save(_config);
+            Save();
         }
 
         var releaseModifierIndex = FindOptionIndex(ReleaseModifierOptions, _config.General.ReleaseModifier);
         if (ImGui.Combo("Temporary release modifier", ref releaseModifierIndex, ReleaseModifierLabels, ReleaseModifierLabels.Length))
         {
             _config.General.ReleaseModifier = ReleaseModifierOptions[releaseModifierIndex].Value;
-            ConfigRepository.Save(_config);
+            Save();
         }
 
         DrawSection("Activation conditions");
@@ -47,21 +47,21 @@ public sealed partial class ConfigWindow : Window, IDisposable
         if (ImGui.Checkbox("Pause while chat/text input is active", ref disableWhileTextInputActive))
         {
             conditions.DisableWhileTextInputActive = disableWhileTextInputActive;
-            ConfigRepository.Save(_config);
+            Save();
         }
 
         var disableWhenNativeAddonFocused = conditions.DisableWhenNativeAddonFocused;
         if (ImGui.Checkbox("Pause while a native game window is focused", ref disableWhenNativeAddonFocused))
         {
             conditions.DisableWhenNativeAddonFocused = disableWhenNativeAddonFocused;
-            ConfigRepository.Save(_config);
+            Save();
         }
 
         var disableWhenNativeAddonHovered = conditions.DisableWhenNativeAddonHovered;
         if (DrawNestedCheckbox("Also pause while hovering native game windows", ref disableWhenNativeAddonHovered))
         {
             conditions.DisableWhenNativeAddonHovered = disableWhenNativeAddonHovered;
-            ConfigRepository.Save(_config);
+            Save();
         }
         DrawTooltip("Not recommended.");
 
@@ -69,14 +69,14 @@ public sealed partial class ConfigWindow : Window, IDisposable
         if (ImGui.Checkbox("Only lock in combat", ref requireCombat))
         {
             conditions.RequireCombat = requireCombat;
-            ConfigRepository.Save(_config);
+            Save();
         }
 
         var countCountdownAsCombat = conditions.CountCountdownAsCombat;
         if (DrawNestedCheckbox("Treat countdown as combat", ref countCountdownAsCombat))
         {
             conditions.CountCountdownAsCombat = countCountdownAsCombat;
-            ConfigRepository.Save(_config);
+            Save();
         }
 
         DrawSection("Toggle keybind");
@@ -92,7 +92,7 @@ public sealed partial class ConfigWindow : Window, IDisposable
         if (ImGui.Checkbox("Hide cursor overlay plugins during mouselook", ref hideCursorOverlayPlugins))
         {
             _config.General.Compatibility.HideCursorOverlayPluginsDuringMouseLook = hideCursorOverlayPlugins;
-            ConfigRepository.Save(_config);
+            Save();
         }
 
         DrawSection("Server Info Bar");
@@ -104,11 +104,13 @@ public sealed partial class ConfigWindow : Window, IDisposable
         if (ImGui.Checkbox("Debug enabled", ref debugEnabled))
         {
             _config.General.DebugEnabled = debugEnabled;
-            ConfigRepository.Save(_config);
+            Save();
         }
     }
 
     public void Dispose()
     {
     }
+
+    private void Save() => ConfigRepository.Save(_config);
 }

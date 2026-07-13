@@ -22,7 +22,7 @@ public sealed class ToggleKeybindService : IDisposable
 
     private void OnFrameworkUpdate(IFramework framework)
     {
-        var settings = System.Config.General.ToggleKeybind;
+        var settings = PluginState.Config.General.ToggleKeybind;
         if (!settings.Enabled || settings.Key == VirtualKey.NO_KEY)
         {
             _wasDown = false;

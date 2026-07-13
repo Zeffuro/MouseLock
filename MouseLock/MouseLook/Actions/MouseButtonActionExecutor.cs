@@ -1,7 +1,6 @@
 using FFXIVClientStructs.FFXIV.Client.System.Input;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using MouseLock.Configuration;
-using PluginSystem = MouseLock.System;
 
 namespace MouseLock.MouseLook.Actions;
 
@@ -15,7 +14,7 @@ internal sealed unsafe class MouseButtonActionExecutor
         var pressedButtons = inputData->CursorInputs.MouseButtonPressedFlags & MouseLookButtons.PhysicalLookButtons;
         var heldButtons = inputData->CursorInputs.MouseButtonHeldFlags & MouseLookButtons.PhysicalLookButtons;
         var releasedButtons = inputData->CursorInputs.MouseButtonReleasedFlags & MouseLookButtons.PhysicalLookButtons;
-        var actions = PluginSystem.Config.General.MouseActions;
+        var actions = PluginState.Config.General.MouseActions;
 
         UpdateButton(
             inputData,

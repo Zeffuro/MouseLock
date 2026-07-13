@@ -5,7 +5,6 @@ using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using MouseLock.Configuration;
-using PluginSystem = MouseLock.System;
 
 namespace MouseLock.MouseLook.Activation;
 
@@ -16,12 +15,12 @@ internal sealed class MouseLookActivationRules(ChatTwoTypingState chatTwoTypingS
         AtkModule* atkModule = null,
         bool nativeTextInputActive = false)
     {
-        if (!PluginSystem.Config.General.Enabled || !Service.ClientState.IsLoggedIn)
+        if (!PluginState.Config.General.Enabled || !Service.ClientState.IsLoggedIn)
         {
             return false;
         }
 
-        if (PluginSystem.ConfigWindow.IsOpen)
+        if (PluginState.ConfigWindow.IsOpen)
         {
             return false;
         }
@@ -31,7 +30,7 @@ internal sealed class MouseLookActivationRules(ChatTwoTypingState chatTwoTypingS
             return false;
         }
 
-        var conditions = PluginSystem.Config.General.Conditions;
+        var conditions = PluginState.Config.General.Conditions;
         if (conditions.RequireCombat && !IsCombatOrAllowedCountdownActive())
         {
             return false;
@@ -68,7 +67,7 @@ internal sealed class MouseLookActivationRules(ChatTwoTypingState chatTwoTypingS
             return true;
         }
 
-        if (!PluginSystem.Config.General.Conditions.CountCountdownAsCombat)
+        if (!PluginState.Config.General.Conditions.CountCountdownAsCombat)
         {
             return false;
         }
@@ -152,7 +151,7 @@ internal sealed class MouseLookActivationRules(ChatTwoTypingState chatTwoTypingS
 
     private static unsafe bool IsReleaseModifierHeld(UIInputData* inputData)
     {
-        var modifier = PluginSystem.Config.General.ReleaseModifier;
+        var modifier = PluginState.Config.General.ReleaseModifier;
         var io = ImGui.GetIO();
 
         return modifier switch

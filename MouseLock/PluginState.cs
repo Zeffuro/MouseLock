@@ -7,7 +7,7 @@ using MouseLock.Services;
 
 namespace MouseLock;
 
-public static class System
+public static class PluginState
 {
     public static SystemConfiguration Config { get; set; } = null!;
 
@@ -22,7 +22,6 @@ public static class System
     public static ToggleKeybindService? ToggleKeybindService { get; set; }
 
     public static DtrService? DtrService { get; set; }
-
 
     public static void Reset()
     {

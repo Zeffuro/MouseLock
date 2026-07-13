@@ -55,7 +55,7 @@ public sealed partial class ConfigWindow
         if (ImGui.InputInt("Hotbar", ref hotbar))
         {
             binding.Hotbar = Math.Clamp(hotbar, 1, 10);
-            ConfigRepository.Save(_config);
+            Save();
         }
 
         DrawNestIndicator(1);
@@ -63,7 +63,7 @@ public sealed partial class ConfigWindow
         if (ImGui.InputInt("Slot", ref slot))
         {
             binding.Slot = Math.Clamp(slot, 1, 12);
-            ConfigRepository.Save(_config);
+            Save();
         }
     }
 

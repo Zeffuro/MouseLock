@@ -44,14 +44,6 @@ public sealed partial class ConfigWindow
             ConfigRepository.Save(_config);
         }
 
-        DrawNestIndicator(1);
-        var showWhenLoggedOut = settings.ShowWhenLoggedOut;
-        if (ImGui.Checkbox("Show when logged out", ref showWhenLoggedOut))
-        {
-            settings.ShowWhenLoggedOut = showWhenLoggedOut;
-            ConfigRepository.Save(_config);
-        }
-
-        ImGui.TextWrapped("Clicking the Server Info Bar entry toggles MouseLock on/off.");
+        ImGui.TextWrapped("Left-click the Server Info Bar entry to toggle MouseLock on/off. Right-click it to toggle this config window.");
     }
 }

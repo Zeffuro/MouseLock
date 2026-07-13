@@ -63,7 +63,7 @@ public sealed class CommandHandler : IDisposable
 
     private static void ToggleConfig()
     {
-        System.ConfigWindow.Toggle();
+        PluginState.ConfigWindow.Toggle();
     }
 
     private void PrintHelp()

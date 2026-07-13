@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using Dalamud.Game.Gui.Dtr;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Plugin.Services;
@@ -11,7 +12,7 @@ public sealed class DtrService : IDisposable
     private const string EntryTitle = "MouseLock";
 
     private IDtrBarEntry? _dtrEntry;
-    private DateTime _lastUpdate = DateTime.MinValue;
+    private readonly Stopwatch _updateTimer = Stopwatch.StartNew();
 
     public DtrService()
     {
@@ -26,18 +27,18 @@ public sealed class DtrService : IDisposable
 
     private void OnFrameworkUpdate(IFramework framework)
     {
-        if ((DateTime.Now - _lastUpdate).TotalMilliseconds < 500)
+        if (_updateTimer.ElapsedMilliseconds < 500)
         {
             return;
         }
 
-        _lastUpdate = DateTime.Now;
+        _updateTimer.Restart();
         UpdateBar();
     }
 
     private void UpdateBar()
     {
-        var settings = System.Config.Dtr;
+        var settings = PluginState.Config.Dtr;
         if (!settings.Enabled)
         {
             RemoveEntry();
@@ -50,14 +51,14 @@ public sealed class DtrService : IDisposable
             return;
         }
 
-        if (!Service.ClientState.IsLoggedIn && !settings.ShowWhenLoggedOut)
+        if (!Service.ClientState.IsLoggedIn)
         {
             _dtrEntry.Shown = false;
             return;
         }
 
         _dtrEntry.Text = new SeStringBuilder().AddText(GetStatusText()).Build();
-        _dtrEntry.Tooltip = new SeStringBuilder().AddText("Click to enable or disable MouseLock.").Build();
+        _dtrEntry.Tooltip = new SeStringBuilder().AddText("Left-click to toggle MouseLock. Right-click to toggle config.").Build();
         _dtrEntry.Shown = true;
     }
 
@@ -87,17 +88,26 @@ public sealed class DtrService : IDisposable
 
     private static void OnDtrClick(DtrInteractionEvent interaction)
     {
-        MouseLockSettingsActions.ToggleEnabled();
+        switch (interaction.ClickType)
+        {
+            case MouseClickType.Left:
+                MouseLockSettingsActions.ToggleEnabled();
+                break;
+
+            case MouseClickType.Right:
+                PluginState.ConfigWindow.Toggle();
+                break;
+        }
     }
 
     private static string GetStatusText()
     {
-        if (!System.Config.General.Enabled)
+        if (!PluginState.Config.General.Enabled)
         {
             return "MouseLock: Off";
         }
 
-        return System.MouseLookService?.IsActive == true
+        return PluginState.MouseLookService?.IsActive == true
             ? "MouseLock: Active"
             : "MouseLock: On";
     }
