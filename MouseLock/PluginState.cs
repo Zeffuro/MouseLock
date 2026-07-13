@@ -2,6 +2,7 @@ using Dalamud.Interface.Windowing;
 using MouseLock.Windows;
 using MouseLock.Configuration;
 using MouseLock.Commands;
+using MouseLock.Ipc;
 using MouseLock.MouseLook;
 using MouseLock.Services;
 
@@ -23,6 +24,8 @@ public static class PluginState
 
     public static DtrService? DtrService { get; set; }
 
+    public static MouseLockIpcProvider? IpcProvider { get; set; }
+
     public static void Reset()
     {
         Config = null!;
@@ -32,5 +35,6 @@ public static class PluginState
         MouseLookService = null;
         ToggleKeybindService = null;
         DtrService = null;
+        IpcProvider = null;
     }
 }

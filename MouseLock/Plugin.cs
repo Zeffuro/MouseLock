@@ -35,6 +35,7 @@ public sealed class Plugin : IAsyncDalamudPlugin
         PluginState.MouseLookService = new MouseLookService();
         PluginState.ToggleKeybindService = new ToggleKeybindService();
         PluginState.DtrService = new DtrService();
+        PluginState.IpcProvider = new();
 
         ConfigRepository.SaveImmediate(PluginState.Config);
         return Task.CompletedTask;
@@ -42,6 +43,7 @@ public sealed class Plugin : IAsyncDalamudPlugin
 
     public ValueTask DisposeAsync()
     {
+        PluginState.IpcProvider?.Dispose();
         PluginState.CommandHandler?.Dispose();
         PluginState.MouseLookService?.Dispose();
         PluginState.ToggleKeybindService?.Dispose();
