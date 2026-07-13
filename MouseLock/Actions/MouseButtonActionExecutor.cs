@@ -22,7 +22,7 @@ internal sealed unsafe class MouseButtonActionExecutor
             inputData,
             _leftButtonGameInputState,
             MouseButtonFlags.LBUTTON,
-            actions.LeftButton,
+            MouseButtonActionResolver.ResolveLeft(inputData, actions),
             pressedButtons,
             heldButtons,
             releasedButtons,
@@ -32,7 +32,7 @@ internal sealed unsafe class MouseButtonActionExecutor
             inputData,
             _rightButtonGameInputState,
             MouseButtonFlags.RBUTTON,
-            actions.RightButton,
+            MouseButtonActionResolver.ResolveRight(inputData, actions),
             pressedButtons,
             heldButtons,
             releasedButtons,
@@ -73,7 +73,31 @@ internal sealed unsafe class MouseButtonActionExecutor
                 return;
 
             case MouseButtonBindingKind.GameInput:
-                gameInputState.Update(inputData, binding.GameInput, buttonPressed, buttonHeld, buttonReleased, allowNewActions);
+                gameInputState.Update(
+                    inputData,
+                    binding.GameInput,
+                    buttonPressed,
+                    buttonHeld,
+                    buttonReleased,
+                    allowNewActions);
+                return;
+
+            case MouseButtonBindingKind.ToggleMouseLock:
+                gameInputState.AdvanceRelease(inputData);
+                if (allowNewActions && buttonPressed)
+                {
+                    MouseLockSettingsActions.ToggleEnabled();
+                }
+
+                return;
+
+            case MouseButtonBindingKind.OpenConfig:
+                gameInputState.AdvanceRelease(inputData);
+                if (allowNewActions && buttonPressed)
+                {
+                    PluginState.ConfigWindow.Toggle();
+                }
+
                 return;
 
             default:

@@ -24,6 +24,8 @@ public sealed class Service
 
     [PluginService] public static IClientState ClientState { get; private set; } = null!;
 
+    [PluginService] public static ICondition Condition { get; private set; } = null!;
+
     [PluginService] public static IKeyState KeyState { get; private set; } = null!;
 
     [PluginService] public static ITextureProvider TextureProvider { get; private set; } = null!;

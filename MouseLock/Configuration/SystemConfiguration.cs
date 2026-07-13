@@ -37,6 +37,14 @@ public sealed class SystemConfiguration : IPluginConfiguration
         }
     }
 
+    public void CopyFrom(SystemConfiguration source)
+    {
+        Version = source.Version;
+        General = source.General;
+        Dtr = source.Dtr;
+        EnsureInitialized();
+    }
+
     private void Migrate()
     {
         while (Version < CurrentVersion)

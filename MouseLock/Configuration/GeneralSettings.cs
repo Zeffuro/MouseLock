@@ -1,3 +1,5 @@
+using System;
+
 namespace MouseLock.Configuration;
 
 public sealed class GeneralSettings
@@ -10,6 +12,10 @@ public sealed class GeneralSettings
     public bool Enabled { get; set; } = true;
     public bool DebugEnabled { get; set; }
     public ReleaseModifierKey ReleaseModifier { get; set; } = ReleaseModifierKey.Alt;
+    public bool RestoreCursorPositionOnRelease { get; set; } = true;
+    public bool StickyReleaseEnabled { get; set; }
+    public MouseLookResumePolicy ResumePolicy { get; set; } = MouseLookResumePolicy.Immediate;
+    public int ResumeDelayMilliseconds { get; set; } = 300;
 
     public MouseLookConditionSettings Conditions
     {
@@ -38,9 +44,12 @@ public sealed class GeneralSettings
     public void EnsureInitialized()
     {
         _conditions ??= new MouseLookConditionSettings();
+        _conditions.EnsureInitialized();
+        ResumeDelayMilliseconds = Math.Clamp(ResumeDelayMilliseconds, 100, 2_000);
         _mouseActions ??= new MouseActionSettings();
         _mouseActions.EnsureInitialized();
         _compatibility ??= new MouseLookCompatibilitySettings();
         _toggleKeybind ??= new ToggleKeybindSettings();
+        _toggleKeybind.EnsureInitialized();
     }
 }

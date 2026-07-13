@@ -17,6 +17,8 @@ public static class MouseLockSettingsActions
         {
             ConfigRepository.Save(PluginState.Config);
         }
+
+        PluginState.MouseLookService?.RefreshCurrentStatus();
     }
 
     public static void ToggleEnabled(bool save = true)

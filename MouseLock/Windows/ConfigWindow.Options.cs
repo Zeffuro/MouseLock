@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using Dalamud.Game.ClientState.Keys;
 using MouseLock.Configuration;
 
 namespace MouseLock.Windows;
@@ -16,39 +15,35 @@ public sealed partial class ConfigWindow
 
     private static readonly string[] ReleaseModifierLabels = CreateLabels(ReleaseModifierOptions);
 
+    private static readonly ComboOption<MouseLookResumePolicy>[] ResumePolicyOptions =
+    [
+        new(MouseLookResumePolicy.Immediate, "Immediately"),
+        new(MouseLookResumePolicy.Delay, "After a short delay"),
+        new(MouseLookResumePolicy.WorldClick, "On next world click"),
+    ];
+
+    private static readonly string[] ResumePolicyLabels = CreateLabels(ResumePolicyOptions);
+
     private static readonly ComboOption<MouseButtonBindingKind>[] BindingKindOptions =
     [
         new(MouseButtonBindingKind.None, "None"),
         new(MouseButtonBindingKind.GameInput, "Game input"),
         new(MouseButtonBindingKind.HotbarSlot, "Hotbar slot"),
+        new(MouseButtonBindingKind.TemporaryRelease, "Temporary release"),
+        new(MouseButtonBindingKind.ToggleMouseLock, "Toggle MouseLock"),
+        new(MouseButtonBindingKind.OpenConfig, "Open config"),
     ];
 
     private static readonly string[] BindingKindLabels = CreateLabels(BindingKindOptions);
 
-    private static readonly ComboOption<VirtualKey>[] ToggleKeyOptions =
+    private static readonly ComboOption<DtrTextMode>[] DtrTextModeOptions =
     [
-        new(VirtualKey.NO_KEY, "None"),
-        new(VirtualKey.F1, "F1"),
-        new(VirtualKey.F2, "F2"),
-        new(VirtualKey.F3, "F3"),
-        new(VirtualKey.F4, "F4"),
-        new(VirtualKey.F5, "F5"),
-        new(VirtualKey.F6, "F6"),
-        new(VirtualKey.F7, "F7"),
-        new(VirtualKey.F8, "F8"),
-        new(VirtualKey.F9, "F9"),
-        new(VirtualKey.F10, "F10"),
-        new(VirtualKey.F11, "F11"),
-        new(VirtualKey.F12, "F12"),
-        new(VirtualKey.INSERT, "Insert"),
-        new(VirtualKey.DELETE, "Delete"),
-        new(VirtualKey.HOME, "Home"),
-        new(VirtualKey.END, "End"),
-        new(VirtualKey.PRIOR, "Page Up"),
-        new(VirtualKey.NEXT, "Page Down"),
+        new(DtrTextMode.Simple, "Simple: MouseLock: Paused"),
+        new(DtrTextMode.Detailed, "Detailed: MouseLock: Paused: Reason"),
+        new(DtrTextMode.Compact, "Compact: ML: Paused"),
     ];
 
-    private static readonly string[] ToggleKeyLabels = CreateLabels(ToggleKeyOptions);
+    private static readonly string[] DtrTextModeLabels = CreateLabels(DtrTextModeOptions);
 
     private static readonly ComboOption<CuratedGameInput>[] GameInputOptions =
     [
@@ -92,4 +87,7 @@ public sealed partial class ConfigWindow
 
         return 0;
     }
+
+    private static string GetReleaseModifierLabel(ReleaseModifierKey modifier)
+        => ReleaseModifierOptions[FindOptionIndex(ReleaseModifierOptions, modifier)].Label;
 }

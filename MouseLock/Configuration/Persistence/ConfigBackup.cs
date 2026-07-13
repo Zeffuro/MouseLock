@@ -24,22 +24,19 @@ public static class ConfigBackup
                 return;
             }
 
-            var launcherDirectory = pluginInterface.ConfigFile.Directory?.Parent ??
-                                    pluginInterface.ConfigDirectory.Parent?.Parent;
-            if (launcherDirectory is null)
+            var directoryInfo = GetBackupDirectory(pluginInterface);
+            if (directoryInfo is null)
             {
                 return;
             }
 
-            var backupDirectory = Path.Join(launcherDirectory.FullName, "backups", Name);
-            var directoryInfo = new DirectoryInfo(backupDirectory);
             if (!directoryInfo.Exists)
             {
                 directoryInfo.Create();
             }
 
-            var latestFile = new FileInfo(Path.Join(backupDirectory, $"{Name}.latest.zip"));
-            var tempFile = Path.Join(backupDirectory, $"{Name}.tmp.zip");
+            var latestFile = new FileInfo(Path.Join(directoryInfo.FullName, $"{Name}.latest.zip"));
+            var tempFile = Path.Join(directoryInfo.FullName, $"{Name}.tmp.zip");
 
             var needsBackup = !latestFile.Exists ||
                               ZipJsonHash(latestFile.FullName) != ConfigFilesJsonHash(configFiles, pluginInterface);
@@ -58,7 +55,7 @@ public static class ConfigBackup
             {
                 var timestamp = latestFile.LastWriteTime;
                 var archiveName = $"{Name}.{timestamp:yyyyMMddHHmmss}.zip";
-                File.Move(latestFile.FullName, Path.Join(backupDirectory, archiveName));
+                File.Move(latestFile.FullName, Path.Join(directoryInfo.FullName, archiveName));
             }
 
             File.Move(tempFile, latestFile.FullName);
@@ -77,6 +74,53 @@ public static class ConfigBackup
         {
             Service.Logger.Warning(exception, "Configuration backup skipped.");
         }
+    }
+
+    public static DirectoryInfo? GetBackupDirectory(IDalamudPluginInterface pluginInterface)
+    {
+        var launcherDirectory = pluginInterface.ConfigFile.Directory?.Parent ??
+                                pluginInterface.ConfigDirectory.Parent?.Parent;
+        return launcherDirectory is null
+            ? null
+            : new DirectoryInfo(Path.Join(launcherDirectory.FullName, "backups", Name));
+    }
+
+    public static bool TryLoadLatestBackup(out string configJson, out string message)
+    {
+        configJson = string.Empty;
+        var directory = GetBackupDirectory(Service.PluginInterface);
+        if (directory is null || !directory.Exists)
+        {
+            message = "No backup folder was found.";
+            return false;
+        }
+
+        var backupFile = directory.GetFiles($"{Name}*.zip")
+            .OrderByDescending(file => file.Name.Equals($"{Name}.latest.zip", StringComparison.OrdinalIgnoreCase))
+            .ThenByDescending(file => file.LastWriteTimeUtc)
+            .FirstOrDefault();
+
+        if (backupFile is null)
+        {
+            message = "No MouseLock backup was found.";
+            return false;
+        }
+
+        using var zip = ZipFile.OpenRead(backupFile.FullName);
+        var configEntryName = Service.PluginInterface.ConfigFile.Name;
+        var entry = zip.Entries.FirstOrDefault(entry =>
+            entry.FullName.Equals(configEntryName, StringComparison.OrdinalIgnoreCase));
+        if (entry is null)
+        {
+            message = $"Backup did not contain {configEntryName}.";
+            return false;
+        }
+
+        using var stream = entry.Open();
+        using var reader = new StreamReader(stream, Encoding.UTF8);
+        configJson = reader.ReadToEnd();
+        message = $"Loaded backup {backupFile.Name}.";
+        return true;
     }
 
     private static IEnumerable<FileInfo> GetConfigFiles(IDalamudPluginInterface pluginInterface)

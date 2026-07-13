@@ -24,7 +24,7 @@ public static class PluginState
 
     public static DtrService? DtrService { get; set; }
 
-    public static MouseLockIpcProvider? IpcProvider { get; set; }
+    internal static MouseLockIpcProvider? IpcProvider { get; set; }
 
     public static void Reset()
     {

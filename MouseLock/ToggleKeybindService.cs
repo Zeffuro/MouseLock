@@ -1,6 +1,5 @@
 using System;
 using Dalamud.Bindings.ImGui;
-using Dalamud.Game.ClientState.Keys;
 using Dalamud.Plugin.Services;
 using MouseLock.Configuration;
 
@@ -23,7 +22,7 @@ public sealed class ToggleKeybindService : IDisposable
     private void OnFrameworkUpdate(IFramework framework)
     {
         var settings = PluginState.Config.General.ToggleKeybind;
-        if (!settings.Enabled || settings.Key == VirtualKey.NO_KEY)
+        if (!settings.Enabled || settings.Keybind.IsEmpty)
         {
             _wasDown = false;
             return;
@@ -31,14 +30,20 @@ public sealed class ToggleKeybindService : IDisposable
 
         if (settings.IgnoreWhileTextInputActive && ImGui.GetIO().WantTextInput)
         {
-            _wasDown = Service.KeyState[settings.Key];
+            _wasDown = settings.Keybind.IsPressed();
             return;
         }
 
-        var isDown = Service.KeyState[settings.Key];
+        var isDown = settings.Keybind.IsPressed();
         if (isDown && !_wasDown)
         {
             MouseLockSettingsActions.ToggleEnabled();
+            if (settings.ShowChatFeedback)
+            {
+                Service.ChatGui.Print(
+                    PluginState.Config.General.Enabled ? "MouseLock enabled." : "MouseLock disabled.",
+                    "MouseLock");
+            }
         }
 
         _wasDown = isDown;

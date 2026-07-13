@@ -1,0 +1,33 @@
+namespace MouseLock.MouseLook.Activation;
+
+internal enum MouseLookPauseReason
+{
+    None,
+    PluginDisabled,
+    LoggedOut,
+    ConfigWindowOpen,
+    GameUnfocused,
+    CombatRequired,
+    Cutscene,
+    Gpose,
+    Crafting,
+    Gathering,
+    GroundTargeting,
+    HousingPlacement,
+    Mounted,
+    TerritoryTransition,
+    GamepadMouseMode,
+    TextInput,
+    TalkAddon,
+    NativeAddonFocused,
+    NativeAddonHovered,
+    TPie,
+    ExternalSuspension,
+    ReleaseModifier,
+    StickyRelease,
+    MouseActionRelease,
+    ResumeDelay,
+    WaitingForWorldClick,
+    InputUnavailable,
+    HookUnavailable,
+}

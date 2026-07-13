@@ -1,6 +1,7 @@
 using System;
 using System.Numerics;
 using Dalamud.Bindings.ImGui;
+using Dalamud.Interface.Utility.Raii;
 
 namespace MouseLock.Windows;
 
@@ -25,6 +26,12 @@ public sealed partial class ConfigWindow
         {
             ImGui.SetTooltip(text);
         }
+    }
+
+    private static void DrawDisabled(bool disabled, Action draw)
+    {
+        using var disabledScope = ImRaii.Disabled(disabled);
+        draw();
     }
 
     private static void DrawNestIndicator(int depth)

@@ -5,7 +5,6 @@ using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.Textures;
 using Dalamud.Interface.Utility.Raii;
 using MouseLock.Configuration;
-using MouseLock.Configuration.Persistence;
 using MouseLock.Hotbars;
 
 namespace MouseLock.Windows;
@@ -17,21 +16,74 @@ public sealed partial class ConfigWindow
     private const float HotbarSlotValueWidthInFrames = 3.0f;
     private const float HotbarSlotPickerSizeInFrames = 1.10f;
     private const float HotbarSlotPickerSpacing = 2.0f;
+    private const float MouseActionLayerColumnWidthInFrames = 5.0f;
+    private const float MouseActionComboWidthInFrames = 11.0f;
 
     private readonly Stopwatch _hotbarSlotPulseTimer = new();
     private readonly Stopwatch _hotbarPulseStatusTimer = new();
     private string? _hotbarPulseStatus;
+
+    private void DrawMouseButtonActionGroup(
+        string label,
+        MouseButtonGameInputBinding defaultBinding,
+        MouseButtonGameInputBinding altBinding,
+        MouseButtonGameInputBinding controlBinding,
+        MouseButtonGameInputBinding shiftBinding)
+    {
+        DrawSection(label);
+
+        using var table = ImRaii.Table(
+            $"##{label}ActionLayers",
+            2,
+            ImGuiTableFlags.NoPadOuterX | ImGuiTableFlags.SizingStretchProp);
+        if (!table)
+        {
+            return;
+        }
+
+        ImGui.TableSetupColumn("##Modifier", ImGuiTableColumnFlags.WidthFixed, ImGui.GetFrameHeight() * MouseActionLayerColumnWidthInFrames);
+        ImGui.TableSetupColumn("##Binding", ImGuiTableColumnFlags.WidthStretch);
+
+        DrawMouseActionLayerRow($"{label}Default", "Default", ReleaseModifierKey.None, defaultBinding);
+        DrawMouseActionLayerRow($"{label}Alt", "Alt", ReleaseModifierKey.Alt, altBinding);
+        DrawMouseActionLayerRow($"{label}Control", "Control", ReleaseModifierKey.Control, controlBinding);
+        DrawMouseActionLayerRow($"{label}Shift", "Shift", ReleaseModifierKey.Shift, shiftBinding);
+    }
+
+    private void DrawMouseActionLayerRow(
+        string id,
+        string layerLabel,
+        ReleaseModifierKey layerModifier,
+        MouseButtonGameInputBinding binding)
+    {
+        ImGui.TableNextRow();
+        ImGui.TableNextColumn();
+        ImGui.AlignTextToFramePadding();
+        if (layerModifier != ReleaseModifierKey.None && binding.Kind == MouseButtonBindingKind.None)
+        {
+            ImGui.TextDisabled(layerLabel);
+        }
+        else
+        {
+            ImGui.TextUnformatted(layerLabel);
+        }
+
+        ImGui.TableNextColumn();
+        DrawMouseActionBinding(id, binding);
+        DrawMouseActionLayerConflictWarning(layerModifier, binding);
+    }
 
     private void DrawMouseActionBinding(string label, MouseButtonGameInputBinding binding)
     {
         using var id = ImRaii.PushId(label);
 
         var kindIndex = FindOptionIndex(BindingKindOptions, binding.Kind);
-        if (ImGui.Combo($"{label} binding", ref kindIndex, BindingKindLabels, BindingKindLabels.Length))
+        ImGui.SetNextItemWidth(GetMouseActionControlWidth());
+        if (ImGui.Combo("##Binding", ref kindIndex, BindingKindLabels, BindingKindLabels.Length))
         {
             binding.Kind = BindingKindOptions[kindIndex].Value;
             binding.Clamp();
-            ConfigRepository.Save(_config);
+            Save();
         }
 
         switch (binding.Kind)
@@ -48,12 +100,30 @@ public sealed partial class ConfigWindow
     private void DrawGameInputBinding(MouseButtonGameInputBinding binding)
     {
         DrawNestIndicator(1);
+        ImGui.AlignTextToFramePadding();
+        ImGui.TextUnformatted("Game input");
+        ImGui.SameLine();
+
         var gameInputIndex = FindOptionIndex(GameInputOptions, binding.GameInput);
-        if (ImGui.Combo("Game input", ref gameInputIndex, GameInputLabels, GameInputLabels.Length))
+        ImGui.SetNextItemWidth(GetMouseActionControlWidth());
+        if (ImGui.Combo("##GameInput", ref gameInputIndex, GameInputLabels, GameInputLabels.Length))
         {
             binding.GameInput = GameInputOptions[gameInputIndex].Value;
-            ConfigRepository.Save(_config);
+            Save();
         }
+    }
+
+    private void DrawMouseActionLayerConflictWarning(ReleaseModifierKey layerModifier, MouseButtonGameInputBinding binding)
+    {
+        if (binding.Kind == MouseButtonBindingKind.None ||
+            _config.General.ReleaseModifier != layerModifier)
+        {
+            return;
+        }
+
+        DrawNestIndicator(1);
+        using var warningColor = ImRaii.PushColor(ImGuiCol.Text, GetWarningTextColor());
+        ImGui.TextWrapped($"{GetReleaseModifierLabel(layerModifier)} is also the temporary release modifier, so this layer pauses MouseLock before the action can run.");
     }
 
     private void DrawHotbarSlotBinding(MouseButtonGameInputBinding binding)
@@ -281,6 +351,9 @@ public sealed partial class ConfigWindow
     private static float GetHotbarSlotControlLabelWidth()
         => MathF.Max(ImGui.CalcTextSize("Hotbar").X, ImGui.CalcTextSize("Slot").X);
 
+    private static float GetMouseActionControlWidth()
+        => MathF.Min(ImGui.GetContentRegionAvail().X, ImGui.GetFrameHeight() * MouseActionComboWidthInFrames);
+
     private static Vector4 GetHotbarSlotSelectionColor()
     {
         var colors = ImGui.GetStyle().Colors;
@@ -313,6 +386,9 @@ public sealed partial class ConfigWindow
 
     private static float GetPerceivedBrightness(Vector4 color)
         => (color.X * 0.299f) + (color.Y * 0.587f) + (color.Z * 0.114f);
+
+    private static Vector4 GetWarningTextColor()
+        => new(1.0f, 0.72f, 0.25f, 1.0f);
 
     private static void DrawHotbarSlotSelectedOverlay(Vector4 selectionColor)
     {

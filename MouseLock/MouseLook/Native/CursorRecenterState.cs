@@ -39,7 +39,10 @@ internal sealed unsafe class CursorRecenterState
 
     public bool IsActive { get; private set; }
 
-    public void Apply(UIInputData* inputData, bool applyScheduledMoveCompensation)
+    public void Apply(
+        UIInputData* inputData,
+        bool applyScheduledMoveCompensation,
+        bool rememberRestorePosition)
     {
         if (applyScheduledMoveCompensation)
         {
@@ -55,10 +58,22 @@ internal sealed unsafe class CursorRecenterState
         var wasActive = IsActive;
         if (!wasActive)
         {
-            _restorePositionX = inputData->CursorInputs.PositionX;
-            _restorePositionY = inputData->CursorInputs.PositionY;
-            _hasRestorePosition = true;
+            if (rememberRestorePosition)
+            {
+                _restorePositionX = inputData->CursorInputs.PositionX;
+                _restorePositionY = inputData->CursorInputs.PositionY;
+                _hasRestorePosition = true;
+            }
+            else
+            {
+                ClearRestorePosition();
+            }
+
             IsActive = true;
+        }
+        else if (!rememberRestorePosition)
+        {
+            ClearRestorePosition();
         }
 
         var currentX = inputData->CursorInputs.PositionX;
@@ -117,6 +132,13 @@ internal sealed unsafe class CursorRecenterState
         _restorePositionY = 0;
         _scheduledCursorMoveDeltaX = 0;
         _scheduledCursorMoveDeltaY = 0;
+    }
+
+    private void ClearRestorePosition()
+    {
+        _hasRestorePosition = false;
+        _restorePositionX = 0;
+        _restorePositionY = 0;
     }
 
     private void CompensateForScheduledCursorMove(UIInputData* inputData)

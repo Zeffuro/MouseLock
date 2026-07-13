@@ -4,6 +4,7 @@ using Dalamud.Game.Gui.Dtr;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Plugin.Services;
 using MouseLock.Configuration;
+using MouseLock.MouseLook.Activation;
 
 namespace MouseLock.Services;
 
@@ -57,8 +58,12 @@ public sealed class DtrService : IDisposable
             return;
         }
 
-        _dtrEntry.Text = new SeStringBuilder().AddText(GetStatusText()).Build();
-        _dtrEntry.Tooltip = new SeStringBuilder().AddText("Left-click to toggle MouseLock. Right-click to toggle config.").Build();
+        var status = GetStatus();
+        _dtrEntry.Text = new SeStringBuilder().AddText(status.GetDtrText(settings.TextMode)).Build();
+        _dtrEntry.Tooltip = new SeStringBuilder()
+            .AddText(status.Detail)
+            .AddText("\nLeft-click to toggle MouseLock. Right-click to toggle config.")
+            .Build();
         _dtrEntry.Shown = true;
     }
 
@@ -100,15 +105,7 @@ public sealed class DtrService : IDisposable
         }
     }
 
-    private static string GetStatusText()
-    {
-        if (!PluginState.Config.General.Enabled)
-        {
-            return "MouseLock: Off";
-        }
-
-        return PluginState.MouseLookService?.IsActive == true
-            ? "MouseLock: Active"
-            : "MouseLock: On";
-    }
+    private static MouseLookStatus GetStatus()
+        => PluginState.MouseLookService?.Status
+           ?? MouseLookStatus.Unavailable(MouseLookPauseReason.HookUnavailable);
 }
