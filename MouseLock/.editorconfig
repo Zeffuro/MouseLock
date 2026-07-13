@@ -1,0 +1,26 @@
+﻿root = true
+
+[*]
+charset = utf-8
+end_of_line = crlf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.cs]
+indent_style = space
+indent_size = 4
+csharp_new_line_before_open_brace = all
+csharp_prefer_braces = true:suggestion
+csharp_indent_preprocessor_if = usual_indent
+csharp_indent_preprocessor_region = usual_indent
+csharp_indent_preprocessor_other = usual_indent
+resharper_csharp_indent_preprocessor_if = usual_indent
+resharper_csharp_indent_preprocessor_region = usual_indent
+resharper_csharp_indent_preprocessor_other = usual_indent
+resharper_indent_preprocessor_if = usual_indent
+resharper_indent_preprocessor_region = usual_indent
+resharper_indent_preprocessor_other = usual_indent
+
+[*.{json,yml,yaml,md}]
+indent_style = space
+indent_size = 2

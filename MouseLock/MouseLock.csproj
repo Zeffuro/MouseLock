@@ -1,0 +1,14 @@
+﻿<Project Sdk="Dalamud.NET.Sdk/15.0.0">
+    <PropertyGroup>
+        <Version>1.0.0.0</Version>
+        <Authors>Zeffuro</Authors>
+        <RepositoryUrl></RepositoryUrl>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    </PropertyGroup>
+
+    <Import Project="Build\KamiToolKit.props" Condition="Exists('Build\KamiToolKit.props')"/>
+    <Import Project="Build\KamiToolKit.Components.props" Condition="Exists('Build\KamiToolKit.Components.props')"/>
+    <Import Project="Build\LuminaSupplemental.Excel.props" Condition="Exists('Build\LuminaSupplemental.Excel.props')"/>
+    <Import Project="Build\Lumina.Excel.props" Condition="Exists('Build\Lumina.Excel.props')"/>
+    <Import Project="Build\ManualFFXIVClientStructs.props" Condition="Exists('Build\ManualFFXIVClientStructs.props')"/>
+</Project>

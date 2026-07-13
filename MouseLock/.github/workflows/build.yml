@@ -1,0 +1,58 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+
+jobs:
+  build:
+    name: Build (${{ matrix.dalamud.name }})
+    runs-on: windows-2022
+
+    strategy:
+      fail-fast: false
+      matrix:
+        dalamud:
+          - name: latest
+            url: https://goatcorp.github.io/dalamud-distrib/latest.zip
+          - name: staging
+            url: https://goatcorp.github.io/dalamud-distrib/stg/latest.zip
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj', '**/*.props') }}
+          restore-keys: |
+            nuget-${{ runner.os }}-
+
+      - name: Download Dalamud (${{ matrix.dalamud.name }})
+        shell: pwsh
+        run: |
+          $hooksPath = Join-Path $env:APPDATA 'XIVLauncher\addon\Hooks\dev'
+          New-Item -ItemType Directory -Force -Path $hooksPath | Out-Null
+          Invoke-WebRequest -Uri '${{ matrix.dalamud.url }}' -OutFile dalamud.zip
+          Expand-Archive -Path dalamud.zip -DestinationPath $hooksPath -Force
+
+      - name: Restore
+        run: dotnet restore ./MouseLock.csproj
+
+      - name: Build Debug
+        run: dotnet build ./MouseLock.csproj --configuration Debug --no-restore
+
+      - name: Build Release
+        run: dotnet build ./MouseLock.csproj --configuration Release --no-restore

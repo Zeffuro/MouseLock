@@ -1,0 +1,12 @@
+name: Suggestion
+description: Suggest a change or new feature for MouseLock.
+title: "[Suggestion]: "
+labels: [suggestion]
+body:
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: Suggestion
+      description: Describe what you want changed or added.
+    validations:
+      required: true
