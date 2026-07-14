@@ -16,4 +16,7 @@
         <Tags>mouse;mouselook;mouse look;cursor;camera;movement;input;keybind;hotbar;qol;utility</Tags>
         <AcceptsFeedback>true</AcceptsFeedback>
     </PropertyGroup>
+    <ItemGroup>
+      <Content Include="changelog.md" />
+    </ItemGroup>
 </Project>
