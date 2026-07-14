@@ -4,5 +4,4 @@ obj/
 .vs/
 *.user
 *.suo
-*.lock.json
 *.zip
