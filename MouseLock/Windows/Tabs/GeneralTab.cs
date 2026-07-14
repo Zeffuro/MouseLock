@@ -63,7 +63,7 @@ internal sealed class GeneralTab(
         ConfigWindow.DrawTooltip("When enabled, tap the release modifier to keep the cursor free. Tap it again or click back into the world to relock.");
 
         ConfigWindow.DrawSection("Toggle keybind");
-        toggleKeybindEditor.Draw(config.General.ToggleKeybind);
+        toggleKeybindEditor.Draw(config.ToggleKeybind);
 
         ConfigWindow.DrawSection("Server Info Bar");
         dtrSettingsEditor.Draw(config.Dtr);

@@ -11,12 +11,40 @@ public sealed class SystemConfiguration : IPluginConfiguration
     public int Version { get; set; }
 
     private GeneralSettings _general = new();
+    private MouseLookActivationSettings _activation = new();
+    private MouseActionSettings _mouseActions = new();
+    private MouseLookCompatibilitySettings _compatibility = new();
+    private ToggleKeybindSettings _toggleKeybind = new();
     private DtrSettings _dtr = new();
 
     public GeneralSettings General
     {
         get => _general;
         set => _general = value ?? new GeneralSettings();
+    }
+
+    public MouseLookActivationSettings Activation
+    {
+        get => _activation;
+        set => _activation = value ?? new MouseLookActivationSettings();
+    }
+
+    public MouseActionSettings MouseActions
+    {
+        get => _mouseActions;
+        set => _mouseActions = value ?? new MouseActionSettings();
+    }
+
+    public MouseLookCompatibilitySettings Compatibility
+    {
+        get => _compatibility;
+        set => _compatibility = value ?? new MouseLookCompatibilitySettings();
+    }
+
+    public ToggleKeybindSettings ToggleKeybind
+    {
+        get => _toggleKeybind;
+        set => _toggleKeybind = value ?? new ToggleKeybindSettings();
     }
 
     public DtrSettings Dtr
@@ -28,7 +56,13 @@ public sealed class SystemConfiguration : IPluginConfiguration
     public void EnsureInitialized()
     {
         _general ??= new GeneralSettings();
-        _general.EnsureInitialized();
+        _activation ??= new MouseLookActivationSettings();
+        _activation.EnsureInitialized();
+        _mouseActions ??= new MouseActionSettings();
+        _mouseActions.EnsureInitialized();
+        _compatibility ??= new MouseLookCompatibilitySettings();
+        _toggleKeybind ??= new ToggleKeybindSettings();
+        _toggleKeybind.EnsureInitialized();
         _dtr ??= new DtrSettings();
 
         if (Version < CurrentVersion)
@@ -41,6 +75,10 @@ public sealed class SystemConfiguration : IPluginConfiguration
     {
         Version = source.Version;
         General = source.General;
+        Activation = source.Activation;
+        MouseActions = source.MouseActions;
+        Compatibility = source.Compatibility;
+        ToggleKeybind = source.ToggleKeybind;
         Dtr = source.Dtr;
         EnsureInitialized();
     }

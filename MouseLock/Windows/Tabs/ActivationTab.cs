@@ -29,7 +29,8 @@ internal sealed class ActivationTab(
             return;
         }
 
-        var conditions = config.General.Conditions;
+        var activation = config.Activation;
+        var conditions = activation.Conditions;
 
         var disableWhileTextInputActive = conditions.DisableWhileTextInputActive;
         if (ImGui.Checkbox("Pause while chat/text input is active", ref disableWhileTextInputActive))
@@ -78,26 +79,26 @@ internal sealed class ActivationTab(
         });
 
         ConfigWindow.DrawSection("Resume behavior");
-        var resumePolicyIndex = FindOptionIndex(ResumePolicyOptions, config.General.ResumePolicy);
+        var resumePolicyIndex = FindOptionIndex(ResumePolicyOptions, activation.ResumePolicy);
         if (ImGui.Combo("After a pause ends", ref resumePolicyIndex, ResumePolicyLabels, ResumePolicyLabels.Length))
         {
-            config.General.ResumePolicy = ResumePolicyOptions[resumePolicyIndex].Value;
+            activation.ResumePolicy = ResumePolicyOptions[resumePolicyIndex].Value;
             save();
         }
 
-        ConfigWindow.DrawDisabled(config.General.ResumePolicy != MouseLookResumePolicy.Delay, () =>
+        ConfigWindow.DrawDisabled(activation.ResumePolicy != MouseLookResumePolicy.Delay, () =>
         {
             ConfigWindow.DrawNestIndicator(1);
-            var resumeDelay = config.General.ResumeDelayMilliseconds;
+            var resumeDelay = activation.ResumeDelayMilliseconds;
             ImGui.SetNextItemWidth(ImGui.GetFrameHeight() * 4.0f);
             if (ImGui.InputInt("Delay (ms)", ref resumeDelay, 0, 0))
             {
-                config.General.ResumeDelayMilliseconds = Math.Clamp(resumeDelay, 100, 2_000);
+                activation.ResumeDelayMilliseconds = Math.Clamp(resumeDelay, 100, 2_000);
                 save();
             }
         });
 
-        if (config.General.ResumePolicy == MouseLookResumePolicy.WorldClick)
+        if (activation.ResumePolicy == MouseLookResumePolicy.WorldClick)
         {
             ImGui.TextDisabled("MouseLock resumes when you click back into the world, not while a native game window is focused or hovered.");
         }

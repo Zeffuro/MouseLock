@@ -118,7 +118,7 @@ internal sealed class MouseLookService : IDisposable
 
                 if (decision.ShouldLock)
                 {
-                    ApplyMouseLook(inputData, applyScheduledMoveCompensation: true, applyCursorOverlayCompatibility: false);
+                    ApplyMouseLookBeforeNativeInput(inputData);
                 }
 
                 UpdateStatus(decision);
@@ -172,7 +172,7 @@ internal sealed class MouseLookService : IDisposable
                 return _hooks.RunOriginalCameraInputSource();
             }
 
-            ApplyMouseLook(inputData, applyScheduledMoveCompensation: true, applyCursorOverlayCompatibility: true);
+            ApplyMouseLook(inputData);
             UpdateStatus(decision);
             return 3;
         }
@@ -197,20 +197,21 @@ internal sealed class MouseLookService : IDisposable
             return;
         }
 
-        ApplyMouseLook(inputData, applyScheduledMoveCompensation: true, applyCursorOverlayCompatibility: true);
+        ApplyMouseLook(inputData);
         UpdateStatus(decision);
     }
 
-    private unsafe void ApplyMouseLook(
-        UIInputData* inputData,
-        bool applyScheduledMoveCompensation,
-        bool applyCursorOverlayCompatibility)
-        => _controller.Apply(
-            inputData,
-            applyScheduledMoveCompensation,
-            applyCursorOverlayCompatibility,
-            PluginState.Config.General.RestoreCursorPositionOnRelease,
-            PluginState.Config.General.Compatibility.HideCursorOverlayPluginsDuringMouseLook);
+    private unsafe void ApplyMouseLook(UIInputData* inputData)
+        => _controller.Apply(inputData, CreateApplyOptions(applyCursorOverlayCompatibility: true));
+
+    private unsafe void ApplyMouseLookBeforeNativeInput(UIInputData* inputData)
+        => _controller.Apply(inputData, CreateApplyOptions(applyCursorOverlayCompatibility: false));
+
+    private static MouseLookApplyOptions CreateApplyOptions(bool applyCursorOverlayCompatibility)
+        => new(
+            ApplyCursorOverlayCompatibility: applyCursorOverlayCompatibility,
+            RememberCursorPosition: PluginState.Config.General.RestoreCursorPositionOnRelease,
+            HideCursorOverlayPlugins: PluginState.Config.Compatibility.HideCursorOverlayPluginsDuringMouseLook);
 
     private unsafe void ReleaseMouseLook(UIInputData* inputData)
         => _controller.Release(
@@ -312,7 +313,7 @@ internal sealed class MouseLookService : IDisposable
     {
         var activationDecision = WithAvailability(_activationRules.Evaluate(inputData, atkModule));
         if (activationDecision.ShouldLock &&
-            PluginState.Config.General.Conditions.DisableDuringGamepadMouseMode &&
+            PluginState.Config.Activation.Conditions.DisableDuringGamepadMouseMode &&
             _isPadMouseModeEnabled)
         {
             activationDecision = MouseLookDecision.Pause(MouseLookPauseReason.GamepadMouseMode);

@@ -26,24 +26,18 @@ internal sealed unsafe class MouseLookController
     public void UpdateMouseActions(UIInputData* inputData, bool allowNewActions)
         => _mouseButtonActionExecutor.Update(inputData, allowNewActions);
 
-    public void Apply(
-        UIInputData* inputData,
-        bool applyScheduledMoveCompensation,
-        bool applyCursorOverlayCompatibility,
-        bool rememberCursorPosition,
-        bool hideCursorOverlayPlugins)
+    public void Apply(UIInputData* inputData, MouseLookApplyOptions options)
     {
         _cursorOverlayState.Release(inputData);
-        var physicalHeldButtons = inputData->CursorInputs.MouseButtonHeldFlags & MouseLookButtons.PhysicalLookButtons;
 
-        _cursorRecenterState.Apply(inputData, applyScheduledMoveCompensation, rememberCursorPosition);
+        _cursorRecenterState.Apply(inputData, applyScheduledMoveCompensation: true, options.RememberCursorPosition);
         MouseButtonSuppression.Apply(inputData);
         _mouseDragState.Apply(inputData);
         _cursorVisibilityState.Apply();
 
-        if (applyCursorOverlayCompatibility)
+        if (options.ApplyCursorOverlayCompatibility)
         {
-            ApplyCursorOverlayCompatibility(inputData, physicalHeldButtons, hideCursorOverlayPlugins);
+            ApplyCursorOverlayCompatibility(inputData, options.HideCursorOverlayPlugins);
         }
     }
 
@@ -67,7 +61,6 @@ internal sealed unsafe class MouseLookController
 
     private void ApplyCursorOverlayCompatibility(
         UIInputData* inputData,
-        MouseButtonFlags physicalHeldButtons,
         bool hideCursorOverlayPlugins)
     {
         if (!hideCursorOverlayPlugins)
@@ -76,6 +69,7 @@ internal sealed unsafe class MouseLookController
             return;
         }
 
+        var physicalHeldButtons = inputData->CursorInputs.MouseButtonHeldFlags & MouseLookButtons.PhysicalLookButtons;
         _cursorOverlayState.Apply(inputData, physicalHeldButtons);
     }
 }

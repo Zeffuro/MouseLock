@@ -49,7 +49,7 @@ internal sealed class MouseLookActivationRules(TextInputMonitor textInputMonitor
             return MouseLookDecision.Pause(MouseLookPauseReason.GameUnfocused);
         }
 
-        var conditions = PluginState.Config.General.Conditions;
+        var conditions = PluginState.Config.Activation.Conditions;
         if (conditions.DisableDuringCutscenes && IsCutsceneActive())
         {
             return MouseLookDecision.Pause(MouseLookPauseReason.Cutscene);
@@ -119,7 +119,7 @@ internal sealed class MouseLookActivationRules(TextInputMonitor textInputMonitor
             return MouseLookDecision.Pause(MouseLookPauseReason.NativeAddonHovered);
         }
 
-        if (PluginState.Config.General.Compatibility.DisableDuringTPieRing &&
+        if (PluginState.Config.Compatibility.DisableDuringTPieRing &&
             TPieIntegration.IsRingActive())
         {
             return MouseLookDecision.Pause(MouseLookPauseReason.TPie);
@@ -151,7 +151,7 @@ internal sealed class MouseLookActivationRules(TextInputMonitor textInputMonitor
             return true;
         }
 
-        if (!PluginState.Config.General.Conditions.CountCountdownAsCombat)
+        if (!PluginState.Config.Activation.Conditions.CountCountdownAsCombat)
         {
             return false;
         }
@@ -198,7 +198,7 @@ internal sealed class MouseLookActivationRules(TextInputMonitor textInputMonitor
     private static unsafe bool IsTemporaryReleaseActionHeld(UIInputData* inputData)
     {
         var heldButtons = inputData->CursorInputs.MouseButtonHeldFlags;
-        var actions = PluginState.Config.General.MouseActions;
+        var actions = PluginState.Config.MouseActions;
 
         return IsTemporaryReleaseHeld(MouseButtonActionResolver.ResolveLeft(inputData, actions), heldButtons, MouseButtonFlags.LBUTTON) ||
                IsTemporaryReleaseHeld(MouseButtonActionResolver.ResolveRight(inputData, actions), heldButtons, MouseButtonFlags.RBUTTON);

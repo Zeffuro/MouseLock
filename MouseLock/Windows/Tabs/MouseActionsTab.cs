@@ -54,7 +54,7 @@ internal sealed class MouseActionsTab(
             return;
         }
 
-        var actions = config.General.MouseActions;
+        var actions = config.MouseActions;
 
         DrawMouseButtonActionGroup(
             "LMB",

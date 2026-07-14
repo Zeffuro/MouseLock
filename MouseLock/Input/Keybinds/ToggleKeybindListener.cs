@@ -23,7 +23,7 @@ internal sealed class ToggleKeybindListener : IDisposable
 
     private void OnFrameworkUpdate(IFramework framework)
     {
-        var settings = PluginState.Config.General.ToggleKeybind;
+        var settings = PluginState.Config.ToggleKeybind;
         if (!settings.Enabled || settings.Keybind.IsEmpty)
         {
             _wasDown = false;

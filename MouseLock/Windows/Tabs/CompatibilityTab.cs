@@ -15,17 +15,17 @@ internal sealed class CompatibilityTab(SystemConfiguration config, Action save)
             return;
         }
 
-        var hideCursorOverlayPlugins = config.General.Compatibility.HideCursorOverlayPluginsDuringMouseLook;
+        var hideCursorOverlayPlugins = config.Compatibility.HideCursorOverlayPluginsDuringMouseLook;
         if (ImGui.Checkbox("Hide cursor overlay plugins during mouselook", ref hideCursorOverlayPlugins))
         {
-            config.General.Compatibility.HideCursorOverlayPluginsDuringMouseLook = hideCursorOverlayPlugins;
+            config.Compatibility.HideCursorOverlayPluginsDuringMouseLook = hideCursorOverlayPlugins;
             save();
         }
 
-        var disableDuringTPieRing = config.General.Compatibility.DisableDuringTPieRing;
+        var disableDuringTPieRing = config.Compatibility.DisableDuringTPieRing;
         if (ImGui.Checkbox("Pause while using TPie", ref disableDuringTPieRing))
         {
-            config.General.Compatibility.DisableDuringTPieRing = disableDuringTPieRing;
+            config.Compatibility.DisableDuringTPieRing = disableDuringTPieRing;
             save();
         }
     }

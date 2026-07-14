@@ -2,6 +2,7 @@ using FFXIVClientStructs.FFXIV.Client.System.Input;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using MouseLock.Configuration;
 using MouseLock.Hotbars;
+using MouseLock.Input;
 using MouseLock.Input.GameInput;
 using MouseLock.MouseLook;
 
@@ -17,27 +18,25 @@ internal sealed unsafe class MouseButtonActionExecutor
         var pressedButtons = inputData->CursorInputs.MouseButtonPressedFlags & MouseLookButtons.PhysicalLookButtons;
         var heldButtons = inputData->CursorInputs.MouseButtonHeldFlags & MouseLookButtons.PhysicalLookButtons;
         var releasedButtons = inputData->CursorInputs.MouseButtonReleasedFlags & MouseLookButtons.PhysicalLookButtons;
-        var actions = PluginState.Config.General.MouseActions;
+        var actions = PluginState.Config.MouseActions;
+
+        MouseButtonState GetButtonState(MouseButtonFlags button) => new(
+            (pressedButtons & button) != 0,
+            (heldButtons & button) != 0,
+            (releasedButtons & button) != 0,
+            allowNewActions);
 
         UpdateButton(
             inputData,
             _leftButtonGameInputState,
-            MouseButtonFlags.LBUTTON,
             MouseButtonActionResolver.ResolveLeft(inputData, actions),
-            pressedButtons,
-            heldButtons,
-            releasedButtons,
-            allowNewActions);
+            GetButtonState(MouseButtonFlags.LBUTTON));
 
         UpdateButton(
             inputData,
             _rightButtonGameInputState,
-            MouseButtonFlags.RBUTTON,
             MouseButtonActionResolver.ResolveRight(inputData, actions),
-            pressedButtons,
-            heldButtons,
-            releasedButtons,
-            allowNewActions);
+            GetButtonState(MouseButtonFlags.RBUTTON));
     }
 
     public void ReleaseAll(UIInputData* inputData)
@@ -55,24 +54,16 @@ internal sealed unsafe class MouseButtonActionExecutor
     private static void UpdateButton(
         UIInputData* inputData,
         ButtonGameInputState gameInputState,
-        MouseButtonFlags button,
         MouseButtonGameInputBinding binding,
-        MouseButtonFlags pressedButtons,
-        MouseButtonFlags heldButtons,
-        MouseButtonFlags releasedButtons,
-        bool allowNewActions)
+        MouseButtonState button)
     {
         binding.Clamp();
-
-        var buttonPressed = (pressedButtons & button) != 0;
-        var buttonHeld = (heldButtons & button) != 0;
-        var buttonReleased = (releasedButtons & button) != 0;
 
         switch (binding.Kind)
         {
             case MouseButtonBindingKind.HotbarSlot:
                 gameInputState.AdvanceRelease(inputData);
-                if (allowNewActions && buttonPressed)
+                if (button.AllowNewActions && button.Pressed)
                 {
                     HotbarSlotInterop.Execute(binding.Hotbar, binding.Slot);
                 }
@@ -83,15 +74,12 @@ internal sealed unsafe class MouseButtonActionExecutor
                 gameInputState.Update(
                     inputData,
                     binding.GameInput,
-                    buttonPressed,
-                    buttonHeld,
-                    buttonReleased,
-                    allowNewActions);
+                    button);
                 return;
 
             case MouseButtonBindingKind.ToggleMouseLock:
                 gameInputState.AdvanceRelease(inputData);
-                if (allowNewActions && buttonPressed)
+                if (button.AllowNewActions && button.Pressed)
                 {
                     MouseLockStateController.ToggleEnabled();
                 }
@@ -100,7 +88,7 @@ internal sealed unsafe class MouseButtonActionExecutor
 
             case MouseButtonBindingKind.OpenConfig:
                 gameInputState.AdvanceRelease(inputData);
-                if (allowNewActions && buttonPressed)
+                if (button.AllowNewActions && button.Pressed)
                 {
                     PluginState.ConfigWindow.Toggle();
                 }

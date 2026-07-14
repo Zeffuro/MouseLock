@@ -1,6 +1,7 @@
 using FFXIVClientStructs.FFXIV.Client.System.Input;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using MouseLock.Configuration;
+using MouseLock.Input;
 
 namespace MouseLock.Input.GameInput;
 
@@ -15,19 +16,16 @@ internal sealed unsafe class ButtonGameInputState
     public void Update(
         UIInputData* inputData,
         CuratedGameInput input,
-        bool buttonPressed,
-        bool buttonHeld,
-        bool buttonReleased,
-        bool allowNewActions)
+        MouseButtonState button)
     {
-        if (buttonReleased || !buttonHeld)
+        if (button.Released || !button.Held)
         {
             _oneShotConsumedUntilMouseRelease = false;
             AdvanceRelease(inputData);
             return;
         }
 
-        if (!allowNewActions)
+        if (!button.AllowNewActions)
         {
             AdvanceRelease(inputData);
             return;
@@ -40,7 +38,7 @@ internal sealed unsafe class ButtonGameInputState
             return;
         }
 
-        if (!heldInput && !buttonPressed)
+        if (!heldInput && !button.Pressed)
         {
             AdvanceRelease(inputData);
             return;
@@ -62,7 +60,7 @@ internal sealed unsafe class ButtonGameInputState
             _releaseFrameApplied = false;
         }
 
-        var state = buttonPressed || changedInput
+        var state = button.Pressed || changedInput
             ? KeyStateFlags.Down | KeyStateFlags.Pressed
             : KeyStateFlags.Down;
 

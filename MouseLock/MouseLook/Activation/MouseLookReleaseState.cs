@@ -71,7 +71,7 @@ internal sealed class MouseLookReleaseState
             return decision;
         }
 
-        var settings = PluginState.Config.General;
+        var settings = PluginState.Config.Activation;
         if (settings.ResumePolicy == MouseLookResumePolicy.Immediate)
         {
             ClearResumeGate();
