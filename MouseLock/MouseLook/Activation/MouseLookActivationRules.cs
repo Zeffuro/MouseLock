@@ -177,7 +177,11 @@ internal sealed class MouseLookActivationRules(TextInputMonitor textInputMonitor
             ConditionFlag.Gathering,
             ConditionFlag.ExecutingGatheringAction);
 
-    private static bool IsGroundTargetingActive() => NativeUiState.IsAddonVisible("_TargetCursorGround");
+    private static unsafe bool IsGroundTargetingActive()
+    {
+        var actionManager = ActionManager.Instance();
+        return actionManager is not null && actionManager->AreaTargetingActionId != 0;
+    }
 
     private static bool IsMounted()
         => Service.Condition.Any(
