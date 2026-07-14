@@ -49,10 +49,10 @@ jobs:
           Expand-Archive -Path dalamud.zip -DestinationPath $hooksPath -Force
 
       - name: Restore
-        run: dotnet restore ./MouseLock.csproj
+        run: dotnet restore ./MouseLock/MouseLock.csproj
 
       - name: Build Debug
-        run: dotnet build ./MouseLock.csproj --configuration Debug --no-restore
+        run: dotnet build ./MouseLock/MouseLock.csproj --configuration Debug --no-restore
 
       - name: Build Release
-        run: dotnet build ./MouseLock.csproj --configuration Release --no-restore
+        run: dotnet build ./MouseLock/MouseLock.csproj --configuration Release --no-restore
