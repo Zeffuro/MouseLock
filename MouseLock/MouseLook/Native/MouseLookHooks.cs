@@ -1,27 +1,29 @@
 using System;
-using System.Runtime.InteropServices;
 using Dalamud.Hooking;
+using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Component.GUI;
-using AtkModuleHandleInputDelegate = FFXIVClientStructs.FFXIV.Component.GUI.AtkModule.Delegates.HandleInput;
 
 namespace MouseLock.MouseLook.Native;
 
 internal sealed unsafe class MouseLookHooks : IDisposable
 {
-    private readonly AtkModuleHandleInputDelegate _atkModuleHandleInputDetour;
-    private readonly CameraInputSourceDelegate _cameraInputSourceDetour;
+    private readonly AtkModule.Delegates.HandleInput _atkModuleHandleInputDetour;
+    private readonly Camera.Delegates.GetCameraInputSource _cameraInputSourceDetour;
 
-    private Hook<AtkModuleHandleInputDelegate>? _atkModuleHandleInputHook;
-    private Hook<CameraInputSourceDelegate>? _cameraInputSourceHook;
+    private Hook<AtkModule.Delegates.HandleInput>? _atkModuleHandleInputHook;
+    private Hook<Camera.Delegates.GetCameraInputSource>? _cameraInputSourceHook;
 
     public MouseLookHooks(
-        AtkModuleHandleInputDelegate atkModuleHandleInputDetour,
-        CameraInputSourceDelegate cameraInputSourceDetour)
+        AtkModule.Delegates.HandleInput atkModuleHandleInputDetour,
+        Camera.Delegates.GetCameraInputSource cameraInputSourceDetour)
     {
         _atkModuleHandleInputDetour = atkModuleHandleInputDetour;
         _cameraInputSourceDetour = cameraInputSourceDetour;
+    }
 
+    public void Enable()
+    {
         EnableAtkModuleHandleInputHook();
         EnableCameraInputSourceHook();
     }
@@ -38,7 +40,7 @@ internal sealed unsafe class MouseLookHooks : IDisposable
         bool isPadMouseModeEnabled)
         => _atkModuleHandleInputHook!.Original(atkModule, inputData, isPadMouseModeEnabled);
 
-    public long RunOriginalCameraInputSource()
+    public CameraInputSource RunOriginalCameraInputSource()
         => _cameraInputSourceHook!.Original();
 
     public void Retry()
@@ -71,7 +73,7 @@ internal sealed unsafe class MouseLookHooks : IDisposable
             return;
         }
 
-        _atkModuleHandleInputHook = Service.GameInteropProvider.HookFromAddress<AtkModuleHandleInputDelegate>(
+        _atkModuleHandleInputHook = Service.GameInteropProvider.HookFromAddress<AtkModule.Delegates.HandleInput>(
             address,
             _atkModuleHandleInputDetour);
         _atkModuleHandleInputHook.Enable();
@@ -88,10 +90,10 @@ internal sealed unsafe class MouseLookHooks : IDisposable
 
     private void EnableCameraInputSourceHook()
     {
-        if (!Service.SigScanner.TryScanText(MouseLookSignatures.CameraInputSource, out var address) ||
-            address == 0)
+        var address = (nint)Camera.MemberFunctionPointers.GetCameraInputSource;
+        if (address == 0)
         {
-            Service.Logger.Error("Could not hook camera input source");
+            Service.Logger.Error("Could not hook Camera.GetCameraInputSource: address was not resolved.");
             return;
         }
 
@@ -109,7 +111,4 @@ internal sealed unsafe class MouseLookHooks : IDisposable
         _cameraInputSourceHook = null;
         IsCameraInputSourceHookReady = false;
     }
-
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    public delegate long CameraInputSourceDelegate();
 }

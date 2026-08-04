@@ -7,7 +7,7 @@ namespace MouseLock.MouseLook.Native;
 
 internal sealed unsafe class CursorRecenterState
 {
-    private readonly delegate* unmanaged<int, int, void> _scheduleCursorMove;
+    private readonly bool _isAvailable;
 
     private bool _hasRestorePosition;
     private bool _hasScheduledCursorMoveDelta;
@@ -21,14 +21,14 @@ internal sealed unsafe class CursorRecenterState
     {
         try
         {
-            if (!Service.SigScanner.TryScanText(MouseLookSignatures.ScheduleCursorMove, out var address) ||
-                address == 0)
+            var address = (nint)MouseDevice.MemberFunctionPointers.ScheduleCursorMove;
+            if (address == 0)
             {
                 Service.Logger.Error("Could not resolve cursor move scheduler.");
                 return;
             }
 
-            _scheduleCursorMove = (delegate* unmanaged<int, int, void>)address;
+            _isAvailable = true;
             Service.Logger.Information("Resolved cursor move scheduler at 0x{Address:X}.", address);
         }
         catch (Exception ex)
@@ -39,7 +39,7 @@ internal sealed unsafe class CursorRecenterState
 
     public bool IsActive { get; private set; }
 
-    public bool IsAvailable => _scheduleCursorMove != null;
+    public bool IsAvailable => _isAvailable;
 
     public void Apply(
         UIInputData* inputData,
@@ -51,7 +51,7 @@ internal sealed unsafe class CursorRecenterState
             CompensateForScheduledCursorMove(inputData);
         }
 
-        if (_scheduleCursorMove == null || !TryGetViewportCenter(out var centerX, out var centerY))
+        if (!IsAvailable || !TryGetViewportCenter(out var centerX, out var centerY))
         {
             Reset();
             return;
@@ -92,7 +92,7 @@ internal sealed unsafe class CursorRecenterState
             return;
         }
 
-        _scheduleCursorMove(centerX, centerY);
+        MouseDevice.ScheduleCursorMove(centerX, centerY);
 
         if (!_hasScheduledCursorMoveDelta)
         {
@@ -110,9 +110,9 @@ internal sealed unsafe class CursorRecenterState
             return;
         }
 
-        if (restoreCursor && _hasRestorePosition && _scheduleCursorMove != null)
+        if (restoreCursor && _hasRestorePosition && IsAvailable)
         {
-            _scheduleCursorMove(_restorePositionX, _restorePositionY);
+            MouseDevice.ScheduleCursorMove(_restorePositionX, _restorePositionY);
         }
 
         Reset();

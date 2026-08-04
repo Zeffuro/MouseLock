@@ -19,6 +19,7 @@ internal sealed partial class ConfigWindow : Window
     private readonly HotbarSlotPicker _hotbarSlotPicker;
     private readonly ToggleKeybindEditor _toggleKeybindEditor;
     private readonly NativeAddonExceptionEditor _nativeAddonExceptionEditor;
+    private readonly DalamudWindowExceptionEditor _dalamudWindowExceptionEditor;
 #if DEBUG
     private readonly DiagnosticsTab _diagnosticsTab;
 #endif
@@ -35,6 +36,7 @@ internal sealed partial class ConfigWindow : Window
         _hotbarSlotPicker = new HotbarSlotPicker(Save);
         _toggleKeybindEditor = new ToggleKeybindEditor(Save);
         _nativeAddonExceptionEditor = new NativeAddonExceptionEditor(Save);
+        _dalamudWindowExceptionEditor = new DalamudWindowExceptionEditor(Save);
 #if DEBUG
         _diagnosticsTab = new DiagnosticsTab(_config, Save);
 #endif
@@ -45,7 +47,7 @@ internal sealed partial class ConfigWindow : Window
             _toggleKeybindEditor,
             _dtrSettingsEditor,
             _configurationTransferPanel);
-        _activationTab = new ActivationTab(_config, Save, _nativeAddonExceptionEditor);
+        _activationTab = new ActivationTab(_config, Save, _nativeAddonExceptionEditor, _dalamudWindowExceptionEditor);
         _mouseActionsTab = new MouseActionsTab(_config, Save, _hotbarSlotPicker);
         _compatibilityTab = new CompatibilityTab(_config, Save);
         SizeConstraints = new WindowSizeConstraints

@@ -1,5 +1,6 @@
 using System;
 using Dalamud.Plugin.Services;
+using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using MouseLock.Configuration;
@@ -72,6 +73,7 @@ internal sealed class MouseLookService : IDisposable
         unsafe
         {
             _hooks = new MouseLookHooks(AtkModuleHandleInputDetour, CameraInputSourceDetour);
+            _hooks.Enable();
         }
 
         Service.Framework.Update += OnFrameworkUpdate;
@@ -149,7 +151,7 @@ internal sealed class MouseLookService : IDisposable
         return result;
     }
 
-    private unsafe long CameraInputSourceDetour()
+    private unsafe CameraInputSource CameraInputSourceDetour()
     {
         try
         {
@@ -174,7 +176,7 @@ internal sealed class MouseLookService : IDisposable
 
             ApplyMouseLook(inputData);
             UpdateStatus(decision);
-            return 3;
+            return CameraInputSource.MouseDrag;
         }
         catch (Exception ex)
         {

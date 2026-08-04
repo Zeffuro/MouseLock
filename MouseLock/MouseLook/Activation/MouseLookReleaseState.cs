@@ -117,9 +117,11 @@ internal sealed class MouseLookReleaseState
 
     private static bool ShouldGateAfterPause(MouseLookPauseReason reason)
         => reason is MouseLookPauseReason.ConfigWindowOpen
+            or MouseLookPauseReason.FirstRunWindowOpen
             or MouseLookPauseReason.GameUnfocused
             or MouseLookPauseReason.TextInput
             or MouseLookPauseReason.TalkAddon
+            or MouseLookPauseReason.DalamudWindowFocused
             or MouseLookPauseReason.NativeAddonFocused
             or MouseLookPauseReason.NativeAddonHovered
             or MouseLookPauseReason.TPie
@@ -167,7 +169,9 @@ internal sealed class MouseLookReleaseState
             return false;
         }
 
+        var conditions = PluginState.Config.Activation.Conditions;
         return !NativeUiState.IsBlockingAddonFocused() &&
-               !NativeUiState.IsBlockingAddonHovered(inputData);
+               !NativeUiState.IsBlockingAddonHovered(inputData) &&
+               !DalamudUiState.IsBlockingUiActive(conditions);
     }
 }

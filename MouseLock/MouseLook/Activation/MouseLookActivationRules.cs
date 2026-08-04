@@ -39,6 +39,11 @@ internal sealed class MouseLookActivationRules(TextInputMonitor textInputMonitor
             return MouseLookDecision.Pause(MouseLookPauseReason.ConfigWindowOpen);
         }
 
+        if (PluginState.FirstRunWindow is { IsOpen: true })
+        {
+            return MouseLookDecision.Pause(MouseLookPauseReason.FirstRunWindowOpen);
+        }
+
         if (inputData is null)
         {
             return MouseLookDecision.Pause(MouseLookPauseReason.InputUnavailable);
@@ -103,6 +108,11 @@ internal sealed class MouseLookActivationRules(TextInputMonitor textInputMonitor
         if (conditions.DisableWhenTalkAddonVisible && NativeUiState.IsAddonVisible("Talk"))
         {
             return MouseLookDecision.Pause(MouseLookPauseReason.TalkAddon);
+        }
+
+        if (conditions.DisableWhenDalamudWindowFocused && DalamudUiState.IsBlockingUiActive(conditions))
+        {
+            return MouseLookDecision.Pause(MouseLookPauseReason.DalamudWindowFocused);
         }
 
         if (conditions.DisableWhenNativeAddonFocused &&

@@ -6,7 +6,7 @@ namespace MouseLock.Configuration;
 [Serializable]
 public sealed class SystemConfiguration : IPluginConfiguration
 {
-    public const int CurrentVersion = 2;
+    public const int CurrentVersion = 3;
 
     public int Version { get; set; }
 
@@ -97,6 +97,10 @@ public sealed class SystemConfiguration : IPluginConfiguration
                     MigrateToVersion2();
                     Version = 2;
                     break;
+                case 2:
+                    MigrateToVersion3();
+                    Version = 3;
+                    break;
                 default:
                     Version = CurrentVersion;
                     break;
@@ -111,5 +115,10 @@ public sealed class SystemConfiguration : IPluginConfiguration
     private void MigrateToVersion2()
     {
         _dtr.Enabled = true;
+    }
+
+    private void MigrateToVersion3()
+    {
+        _general.FirstRunIntroCompleted = true;
     }
 }

@@ -12,8 +12,6 @@ public sealed class Service
 
     [PluginService] public static IGameInteropProvider GameInteropProvider { get; private set; } = null!;
 
-    [PluginService] public static ISigScanner SigScanner { get; private set; } = null!;
-
     [PluginService] public static ICommandManager CommandManager { get; private set; } = null!;
 
     [PluginService] public static IChatGui ChatGui { get; private set; } = null!;

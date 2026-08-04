@@ -4,7 +4,8 @@ public static class ConfigRepository
 {
     public static SystemConfiguration LoadOrDefault()
     {
-        var config = Service.PluginInterface.GetPluginConfig() as SystemConfiguration ?? new SystemConfiguration();
+        var config = Service.PluginInterface.GetPluginConfig() as SystemConfiguration ??
+                     new SystemConfiguration { Version = SystemConfiguration.CurrentVersion };
 
         if (config.Version > SystemConfiguration.CurrentVersion)
         {
@@ -20,7 +21,7 @@ public static class ConfigRepository
 
     public static SystemConfiguration Reset()
     {
-        var config = new SystemConfiguration();
+        var config = new SystemConfiguration { Version = SystemConfiguration.CurrentVersion };
         config.EnsureInitialized();
         SaveImmediate(config);
         return config;

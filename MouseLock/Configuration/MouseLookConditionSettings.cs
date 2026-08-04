@@ -5,11 +5,19 @@ namespace MouseLock.Configuration;
 
 public sealed class MouseLookConditionSettings
 {
+    private static readonly string[] DefaultIgnoredDalamudWindowNames =
+    [
+        "Chat 2###chat2", // Allows the mouse to lock again after typing in Chat 2
+    ];
+
     private List<string> _ignoredFocusedAddonNames = [];
     private List<string> _ignoredHoveredAddonNames = [];
+    private List<string> _ignoredDalamudWindowSystemNamespaces = [];
+    private List<string> _ignoredDalamudWindowNames = [.. DefaultIgnoredDalamudWindowNames];
 
     public bool DisableWhileTextInputActive { get; set; } = true;
     public bool DisableWhenTalkAddonVisible { get; set; } = true;
+    public bool DisableWhenDalamudWindowFocused { get; set; } = true;
     public bool DisableWhenNativeAddonFocused { get; set; } = true;
     public bool DisableWhenNativeAddonHovered { get; set; }
     public bool RequireCombat { get; set; }
@@ -27,37 +35,73 @@ public sealed class MouseLookConditionSettings
     public List<string> IgnoredFocusedAddonNames
     {
         get => _ignoredFocusedAddonNames;
-        set => _ignoredFocusedAddonNames = NormalizeAddonNames(value);
+        set => _ignoredFocusedAddonNames = NormalizeNames(value);
     }
 
     public List<string> IgnoredHoveredAddonNames
     {
         get => _ignoredHoveredAddonNames;
-        set => _ignoredHoveredAddonNames = NormalizeAddonNames(value);
+        set => _ignoredHoveredAddonNames = NormalizeNames(value);
+    }
+
+    public List<string> IgnoredDalamudWindowSystemNamespaces
+    {
+        get => _ignoredDalamudWindowSystemNamespaces;
+        set => _ignoredDalamudWindowSystemNamespaces = NormalizeNames(value);
+    }
+
+    public List<string> IgnoredDalamudWindowNames
+    {
+        get => _ignoredDalamudWindowNames;
+        set => _ignoredDalamudWindowNames = NormalizeNames(value);
     }
 
     public void EnsureInitialized()
     {
-        _ignoredFocusedAddonNames = NormalizeAddonNames(_ignoredFocusedAddonNames);
-        _ignoredHoveredAddonNames = NormalizeAddonNames(_ignoredHoveredAddonNames);
+        _ignoredFocusedAddonNames = NormalizeNames(_ignoredFocusedAddonNames);
+        _ignoredHoveredAddonNames = NormalizeNames(_ignoredHoveredAddonNames);
+        _ignoredDalamudWindowSystemNamespaces = NormalizeNames(_ignoredDalamudWindowSystemNamespaces);
+        _ignoredDalamudWindowNames = NormalizeNames(_ignoredDalamudWindowNames);
     }
 
     public bool IsFocusedAddonIgnored(string addonName)
-        => ContainsAddonName(_ignoredFocusedAddonNames, addonName);
+        => ContainsName(_ignoredFocusedAddonNames, addonName);
 
     public bool IsHoveredAddonIgnored(string addonName)
-        => ContainsAddonName(_ignoredHoveredAddonNames, addonName);
+        => ContainsName(_ignoredHoveredAddonNames, addonName);
 
-    private static bool ContainsAddonName(IEnumerable<string> addonNames, string addonName)
-        => !string.IsNullOrWhiteSpace(addonName) &&
-           addonNames.Any(existing => string.Equals(existing, addonName, System.StringComparison.OrdinalIgnoreCase));
+    public bool IsDalamudWindowSystemIgnored(string windowSystemNamespace)
+        => ContainsName(_ignoredDalamudWindowSystemNamespaces, windowSystemNamespace);
 
-    private static List<string> NormalizeAddonNames(IEnumerable<string>? addonNames)
-        => addonNames?
-               .Select(addonName => addonName.Trim())
-               .Where(addonName => !string.IsNullOrWhiteSpace(addonName))
+    public bool IsDalamudWindowIgnored(string windowName)
+        => ContainsNamePattern(_ignoredDalamudWindowNames, windowName);
+
+    private static bool ContainsName(IEnumerable<string> names, string name)
+        => !string.IsNullOrWhiteSpace(name) &&
+           names.Any(existing => string.Equals(existing, name, System.StringComparison.OrdinalIgnoreCase));
+
+    private static bool ContainsNamePattern(IEnumerable<string> patterns, string name)
+        => !string.IsNullOrWhiteSpace(name) &&
+           patterns.Any(pattern => IsNamePatternMatch(pattern, name));
+
+    private static bool IsNamePatternMatch(string pattern, string name)
+    {
+        if (string.IsNullOrWhiteSpace(pattern))
+        {
+            return false;
+        }
+
+        return pattern.EndsWith('*')
+            ? name.StartsWith(pattern[..^1], System.StringComparison.OrdinalIgnoreCase)
+            : string.Equals(pattern, name, System.StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static List<string> NormalizeNames(IEnumerable<string>? names)
+        => names?
+               .Select(name => name.Trim())
+               .Where(name => !string.IsNullOrWhiteSpace(name))
                .Distinct(System.StringComparer.OrdinalIgnoreCase)
-               .OrderBy(addonName => addonName, System.StringComparer.OrdinalIgnoreCase)
+               .OrderBy(name => name, System.StringComparer.OrdinalIgnoreCase)
                .ToList()
            ?? [];
 }

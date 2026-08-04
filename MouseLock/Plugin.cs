@@ -27,7 +27,9 @@ public sealed class Plugin : IAsyncDalamudPlugin
 
         PluginState.WindowSystem = new WindowSystem("MouseLock");
         PluginState.ConfigWindow = new ConfigWindow(PluginState.Config);
+        PluginState.FirstRunWindow = new FirstRunWindow(PluginState.Config);
         PluginState.WindowSystem.AddWindow(PluginState.ConfigWindow);
+        PluginState.WindowSystem.AddWindow(PluginState.FirstRunWindow);
 
         Service.PluginInterface.UiBuilder.Draw += DrawUi;
         Service.PluginInterface.UiBuilder.OpenMainUi += ToggleUi;

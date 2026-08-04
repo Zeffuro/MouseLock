@@ -18,6 +18,8 @@ public static class PluginState
 
     internal static ConfigWindow ConfigWindow { get; set; } = null!;
 
+    internal static FirstRunWindow FirstRunWindow { get; set; } = null!;
+
     internal static CommandHandler? CommandHandler { get; set; }
 
     internal static TextInputMonitor? TextInputMonitor { get; set; }
@@ -35,6 +37,7 @@ public static class PluginState
         Config = null!;
         WindowSystem = null!;
         ConfigWindow = null!;
+        FirstRunWindow = null!;
         CommandHandler = null;
         TextInputMonitor = null;
         MouseLookService = null;

@@ -10,7 +10,8 @@ namespace MouseLock.Windows.Tabs;
 internal sealed class ActivationTab(
     SystemConfiguration config,
     Action save,
-    NativeAddonExceptionEditor nativeAddonExceptionEditor)
+    NativeAddonExceptionEditor nativeAddonExceptionEditor,
+    DalamudWindowExceptionEditor dalamudWindowExceptionEditor)
 {
     private static readonly ComboOption<MouseLookResumePolicy>[] ResumePolicyOptions =
     [
@@ -43,6 +44,13 @@ internal sealed class ActivationTab(
         if (ImGui.Checkbox("Pause while talking to NPCs", ref disableWhenTalkAddonVisible))
         {
             conditions.DisableWhenTalkAddonVisible = disableWhenTalkAddonVisible;
+            save();
+        }
+
+        var disableWhenDalamudWindowFocused = conditions.DisableWhenDalamudWindowFocused;
+        if (ImGui.Checkbox("Pause while a Dalamud/ImGui window is focused", ref disableWhenDalamudWindowFocused))
+        {
+            conditions.DisableWhenDalamudWindowFocused = disableWhenDalamudWindowFocused;
             save();
         }
 
@@ -100,12 +108,13 @@ internal sealed class ActivationTab(
 
         if (activation.ResumePolicy == MouseLookResumePolicy.WorldClick)
         {
-            ImGui.TextDisabled("MouseLock resumes when you click back into the world, not while a native game window is focused or hovered.");
+            ImGui.TextDisabled("MouseLock resumes when you click back into the world, not while a native game or Dalamud window is focused or hovered.");
         }
 
         ConfigWindow.DrawSection("Game state pauses");
         DrawGameStatePauseSettings(conditions);
 
+        dalamudWindowExceptionEditor.Draw(conditions);
         nativeAddonExceptionEditor.Draw(conditions);
     }
 

@@ -9,13 +9,13 @@ internal sealed unsafe class MouseDragState
     // The game checks how many pixels the mouse has been moved and will treat it as a click if it's 10 pixels or under.
     private const float NativeClickSuppressionDragDistance = 11.0f;
 
-    private readonly InputManagerMouseDragLayout* _inputManager;
+    private readonly InputManager* _inputManager;
 
     public MouseDragState()
     {
         try
         {
-            _inputManager = (InputManagerMouseDragLayout*)InputManager.Instance();
+            _inputManager = InputManager.Instance();
             if (_inputManager is null)
             {
                 Service.Logger.Error("Could not resolve InputManager instance.");
@@ -38,13 +38,13 @@ internal sealed unsafe class MouseDragState
             return;
         }
 
-        _inputManager->MouseButtonHoldState = MouseLookButtons.VirtualDragState;
+        _inputManager->HeldMouseButtons = MouseLookButtons.VirtualDragState;
         _inputManager->MouseDragDistance = NativeClickSuppressionDragDistance;
-        _inputManager->MouseDeltaX = -inputData->CursorInputs.DeltaX;
-        _inputManager->MouseDeltaY = -inputData->CursorInputs.DeltaY;
+        _inputManager->MouseDragDeltaX = -inputData->CursorInputs.DeltaX;
+        _inputManager->MouseDragDeltaY = -inputData->CursorInputs.DeltaY;
         _inputManager->MouseDragStartX = inputData->CursorInputs.PositionX;
         _inputManager->MouseDragStartY = inputData->CursorInputs.PositionY;
-        _inputManager->MouseDragActive = 1;
+        _inputManager->MouseDragActive = true;
 
         IsActive = true;
     }
@@ -72,13 +72,13 @@ internal sealed unsafe class MouseDragState
 
     private void ReleaseNativeState(int startX, int startY)
     {
-        _inputManager->MouseButtonHoldState = InputManager.MouseButtonHoldState.None;
+        _inputManager->HeldMouseButtons = InputManager.MouseButtonHoldState.None;
         _inputManager->MouseDragDistance = 0;
-        _inputManager->MouseDeltaX = 0;
-        _inputManager->MouseDeltaY = 0;
+        _inputManager->MouseDragDeltaX = 0;
+        _inputManager->MouseDragDeltaY = 0;
         _inputManager->MouseDragStartX = startX;
         _inputManager->MouseDragStartY = startY;
-        _inputManager->MouseDragActive = 0;
+        _inputManager->MouseDragActive = false;
 
         IsActive = false;
     }
