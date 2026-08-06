@@ -173,7 +173,7 @@ internal sealed class MouseLookService : IDisposable
                 return _hooks.RunOriginalCameraInputSource();
             }
 
-            ApplyMouseLook(inputData);
+            _controller.ApplyCameraInput(inputData);
             return CameraInputSource.MouseDrag;
         }
         catch (Exception ex)

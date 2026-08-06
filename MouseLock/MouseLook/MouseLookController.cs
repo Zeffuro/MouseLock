@@ -26,6 +26,9 @@ internal sealed unsafe class MouseLookController
     public void UpdateMouseActions(UIInputData* inputData, bool allowNewActions)
         => _mouseButtonActionExecutor.Update(inputData, allowNewActions);
 
+    public void ApplyCameraInput(UIInputData* inputData)
+        => _mouseDragState.Apply(inputData);
+
     public void Apply(UIInputData* inputData, MouseLookApplyOptions options)
     {
         _cursorOverlayState.Release(inputData);
