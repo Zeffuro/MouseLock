@@ -1,4 +1,5 @@
 using Dalamud.Plugin.Ipc;
+using Dalamud.Plugin.Ipc.Exceptions;
 
 namespace MouseLock.Integrations;
 
@@ -7,15 +8,23 @@ internal static class TPieIntegration
     private static readonly ICallGateSubscriber<bool> IsRingActiveSubscriber =
         Service.PluginInterface.GetIpcSubscriber<bool>("TPie.IsRingActive");
 
-    public static bool IsRingActive()
+    public static bool IsRingActive { get; private set; }
+
+    public static void Update()
     {
+        if (!IsRingActiveSubscriber.HasFunction)
+        {
+            IsRingActive = false;
+            return;
+        }
+
         try
         {
-            return IsRingActiveSubscriber.InvokeFunc();
+            IsRingActive = IsRingActiveSubscriber.InvokeFunc();
         }
-        catch
+        catch (IpcNotReadyError)
         {
-            return false;
+            IsRingActive = false;
         }
     }
 }

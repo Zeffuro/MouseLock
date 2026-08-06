@@ -19,7 +19,6 @@ internal sealed unsafe class MouseDragState
             if (_inputManager is null)
             {
                 Service.Logger.Error("Could not resolve InputManager instance.");
-                return;
             }
         }
         catch (Exception ex)

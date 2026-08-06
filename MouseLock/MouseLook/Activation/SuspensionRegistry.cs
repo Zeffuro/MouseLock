@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 
 namespace MouseLock.MouseLook.Activation;
 
@@ -8,7 +9,7 @@ internal static class SuspensionRegistry
 {
     private const string DefaultSource = "External";
 
-    private static readonly object SyncRoot = new();
+    private static readonly Lock SyncRoot = new();
     private static readonly HashSet<string> Sources = new(StringComparer.OrdinalIgnoreCase);
 
     public static bool IsSuspended

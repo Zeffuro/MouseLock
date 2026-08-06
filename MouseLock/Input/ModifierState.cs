@@ -20,9 +20,6 @@ internal static class ModifierState
         };
     }
 
-    public static unsafe bool IsSatisfied(UIInputData* inputData, ReleaseModifierKey modifier)
-        => modifier == ReleaseModifierKey.None || IsHeld(inputData, modifier);
-
     public static unsafe ReleaseModifierKey GetActiveLayer(UIInputData* inputData)
     {
         if (IsHeld(inputData, ReleaseModifierKey.Shift))

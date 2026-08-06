@@ -12,28 +12,31 @@ internal static class DalamudUiState
 
     private static DalamudWindowFocus _lastExternalFocus;
 
-    public static string CurrentWindowSystemNamespace
-        => WindowSystem.FocusedWindowSystemNamespace ?? string.Empty;
+    private static string CurrentWindowSystemNamespace
+        => WindowSystem.FocusedWindowSystemNamespace;
 
     public static DalamudWindowFocus LastExternalFocus
     {
         get
         {
-            RefreshFocusSnapshot();
+            var focus = GetCurrentFocus();
+            RefreshFocusSnapshot(focus);
             return _lastExternalFocus;
         }
     }
 
     public static bool IsBlockingUiActive(MouseLookConditionSettings conditions)
     {
-        RefreshFocusSnapshot();
+        var focus = GetCurrentFocus();
+        RefreshFocusSnapshot(focus);
 
-        return IsBlockingWindowSystemFocusActive(conditions);
+        return IsBlockingWindowSystemFocusActive(focus, conditions);
     }
 
-    private static bool IsBlockingWindowSystemFocusActive(MouseLookConditionSettings conditions)
+    private static bool IsBlockingWindowSystemFocusActive(
+        DalamudWindowFocus focus,
+        MouseLookConditionSettings conditions)
     {
-        var focus = GetCurrentFocus();
         if (string.IsNullOrEmpty(focus.WindowSystemNamespace))
         {
             return false;
@@ -49,9 +52,8 @@ internal static class DalamudUiState
                WindowSystem.TimeSinceLastAnyFocus <= RecentFocusGracePeriod;
     }
 
-    private static void RefreshFocusSnapshot()
+    private static void RefreshFocusSnapshot(DalamudWindowFocus focus)
     {
-        var focus = GetCurrentFocus();
         if (string.IsNullOrEmpty(focus.WindowSystemNamespace) ||
             IsMouseLockWindowSystem(focus.WindowSystemNamespace) ||
             IsMouseLockWindowName(focus.WindowName))

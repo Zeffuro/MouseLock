@@ -6,21 +6,13 @@ using FFXIVClientStructs.FFXIV.Component.GUI;
 
 namespace MouseLock.MouseLook.Native;
 
-internal sealed unsafe class MouseLookHooks : IDisposable
+internal sealed unsafe class MouseLookHooks(
+    AtkModule.Delegates.HandleInput atkModuleHandleInputDetour,
+    Camera.Delegates.GetCameraInputSource cameraInputSourceDetour)
+    : IDisposable
 {
-    private readonly AtkModule.Delegates.HandleInput _atkModuleHandleInputDetour;
-    private readonly Camera.Delegates.GetCameraInputSource _cameraInputSourceDetour;
-
     private Hook<AtkModule.Delegates.HandleInput>? _atkModuleHandleInputHook;
     private Hook<Camera.Delegates.GetCameraInputSource>? _cameraInputSourceHook;
-
-    public MouseLookHooks(
-        AtkModule.Delegates.HandleInput atkModuleHandleInputDetour,
-        Camera.Delegates.GetCameraInputSource cameraInputSourceDetour)
-    {
-        _atkModuleHandleInputDetour = atkModuleHandleInputDetour;
-        _cameraInputSourceDetour = cameraInputSourceDetour;
-    }
 
     public void Enable()
     {
@@ -75,7 +67,7 @@ internal sealed unsafe class MouseLookHooks : IDisposable
 
         _atkModuleHandleInputHook = Service.GameInteropProvider.HookFromAddress<AtkModule.Delegates.HandleInput>(
             address,
-            _atkModuleHandleInputDetour);
+            atkModuleHandleInputDetour);
         _atkModuleHandleInputHook.Enable();
         IsAtkModuleHandleInputHookReady = true;
         Service.Logger.Information("Hooked AtkModule.HandleInput at 0x{Address:X}.", address);
@@ -99,7 +91,7 @@ internal sealed unsafe class MouseLookHooks : IDisposable
 
         _cameraInputSourceHook = Service.GameInteropProvider.HookFromAddress(
             address,
-            _cameraInputSourceDetour);
+            cameraInputSourceDetour);
         _cameraInputSourceHook.Enable();
         IsCameraInputSourceHookReady = true;
         Service.Logger.Information("Hooked camera input source at 0x{Address:X}.", address);

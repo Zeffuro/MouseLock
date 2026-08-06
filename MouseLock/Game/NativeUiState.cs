@@ -25,7 +25,7 @@ internal static unsafe class NativeUiState
     public static bool IsBlockingAddonHovered(UIInputData* inputData)
         => TryGetHoveredBlockingAddonName(inputData, out _);
 
-    public static bool IsAnyUiNodeHovered()
+    private static bool IsAnyUiNodeHovered()
     {
         var stage = AtkStage.Instance();
         return stage is not null &&
@@ -61,7 +61,7 @@ internal static unsafe class NativeUiState
             out addonName);
     }
 
-    public static bool TryGetHoveredBlockingAddonName(short cursorX, short cursorY, out string addonName)
+    private static bool TryGetHoveredBlockingAddonName(short cursorX, short cursorY, out string addonName)
     {
         addonName = string.Empty;
 

@@ -7,8 +7,6 @@ namespace MouseLock.MouseLook.Native;
 
 internal sealed unsafe class CursorRecenterState
 {
-    private readonly bool _isAvailable;
-
     private bool _hasRestorePosition;
     private bool _hasScheduledCursorMoveDelta;
     private bool _clearScheduledCursorMoveDeltaOnCompensation;
@@ -28,7 +26,7 @@ internal sealed unsafe class CursorRecenterState
                 return;
             }
 
-            _isAvailable = true;
+            IsAvailable = true;
             Service.Logger.Information("Resolved cursor move scheduler at 0x{Address:X}.", address);
         }
         catch (Exception ex)
@@ -39,7 +37,7 @@ internal sealed unsafe class CursorRecenterState
 
     public bool IsActive { get; private set; }
 
-    public bool IsAvailable => _isAvailable;
+    public bool IsAvailable { get; }
 
     public void Apply(
         UIInputData* inputData,

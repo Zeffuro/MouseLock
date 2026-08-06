@@ -9,17 +9,11 @@ using MouseLock.Game;
 using MouseLock.Input;
 using MouseLock.Input.MouseActions;
 using MouseLock.Integrations;
-using MouseLock.MouseLook;
 
 namespace MouseLock.MouseLook.Activation;
 
 internal sealed class MouseLookActivationRules(TextInputMonitor textInputMonitor)
 {
-    public unsafe bool ShouldLock(
-        UIInputData* inputData,
-        AtkModule* atkModule = null)
-        => Evaluate(inputData, atkModule).ShouldLock;
-
     public unsafe MouseLookDecision Evaluate(
         UIInputData* inputData,
         AtkModule* atkModule = null)
@@ -130,7 +124,7 @@ internal sealed class MouseLookActivationRules(TextInputMonitor textInputMonitor
         }
 
         if (PluginState.Config.Compatibility.DisableDuringTPieRing &&
-            TPieIntegration.IsRingActive())
+            TPieIntegration.IsRingActive)
         {
             return MouseLookDecision.Pause(MouseLookPauseReason.TPie);
         }

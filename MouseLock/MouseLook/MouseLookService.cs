@@ -3,8 +3,8 @@ using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Component.GUI;
-using MouseLock.Configuration;
 using MouseLock.Input;
+using MouseLock.Integrations;
 using MouseLock.MouseLook.Activation;
 using MouseLock.MouseLook.Native;
 
@@ -24,6 +24,8 @@ internal sealed class MouseLookService : IDisposable
 
     public bool IsActive => _controller.IsActive;
 
+    private bool AreDetoursReady => _hooks.AreDetoursReady;
+
     internal MouseLookStatus Status => _status;
 
     internal MouseLookDecision LastDecision => _lastDecision;
@@ -31,8 +33,6 @@ internal sealed class MouseLookService : IDisposable
     internal bool IsAtkModuleHandleInputHookReady => _hooks.IsAtkModuleHandleInputHookReady;
 
     internal bool IsCameraInputSourceHookReady => _hooks.IsCameraInputSourceHookReady;
-
-    internal bool AreDetoursReady => _hooks.AreDetoursReady;
 
     internal bool IsMouseDragAvailable => _controller.IsMouseDragAvailable;
 
@@ -89,6 +89,7 @@ internal sealed class MouseLookService : IDisposable
 
     private unsafe void OnFrameworkUpdate(IFramework framework)
     {
+        TPieIntegration.Update();
         var inputData = UIInputData.Instance();
         if (inputData is null)
         {
@@ -162,25 +163,25 @@ internal sealed class MouseLookService : IDisposable
                 return _hooks.RunOriginalCameraInputSource();
             }
 
-            var decision = EvaluateDecision(inputData);
-            if (!decision.ShouldLock)
+            if (!_lastDecision.ShouldLock)
             {
                 if (_controller.ShouldRelease)
                 {
                     ReleaseMouseLook(inputData);
                 }
 
-                UpdateStatus(decision);
                 return _hooks.RunOriginalCameraInputSource();
             }
 
             ApplyMouseLook(inputData);
-            UpdateStatus(decision);
             return CameraInputSource.MouseDrag;
         }
         catch (Exception ex)
         {
-            Service.Logger.Debug(ex, "MouseLook camera-input detour failed. Falling back to original input source.");
+            Service.Logger.Debug(
+                ex,
+                "MouseLook camera-input detour failed. Falling back to original input source.");
+
             return _hooks.RunOriginalCameraInputSource();
         }
     }
