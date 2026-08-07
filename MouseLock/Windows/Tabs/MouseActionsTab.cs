@@ -56,6 +56,18 @@ internal sealed class MouseActionsTab(
 
         var actions = config.MouseActions;
 
+        ConfigWindow.DrawSection("Movement");
+
+        var classicMouseMovementEnabled = actions.ClassicMouseMovementEnabled;
+        if (ImGui.Checkbox("Hold LMB + RMB to move forward", ref classicMouseMovementEnabled))
+        {
+            actions.ClassicMouseMovementEnabled = classicMouseMovementEnabled;
+            save();
+        }
+        ConfigWindow.DrawTooltip(
+            "Uses the game's normal LMB + RMB movement while MouseLock is active. " +
+            "A configured LMB/RMB action takes priority.");
+
         DrawMouseButtonActionGroup(
             "LMB",
             actions.LeftButton,

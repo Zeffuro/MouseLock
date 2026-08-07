@@ -1,19 +1,21 @@
 using FFXIVClientStructs.FFXIV.Client.System.Input;
 using FFXIVClientStructs.FFXIV.Client.UI;
-using MouseLock.MouseLook;
 
 namespace MouseLock.MouseLook.Native;
 
 internal static class MouseButtonSuppression
 {
-    private const MouseButtonFlags SuppressedButtons = MouseLookButtons.PhysicalLookButtons;
-
-    public static unsafe void Apply(UIInputData* inputData)
+    public static unsafe void Apply(UIInputData* inputData, MouseButtonFlags buttons)
     {
-        inputData->CursorInputs.Clear(false, SuppressedButtons);
-        inputData->UIFilteredCursorInputs.Clear(false, SuppressedButtons);
+        if (buttons == MouseButtonFlags.None)
+        {
+            return;
+        }
 
-        inputData->CurrentMouseDragButtons &= unchecked((byte)~(byte)SuppressedButtons);
+        inputData->CursorInputs.Clear(false, buttons);
+        inputData->UIFilteredCursorInputs.Clear(false, buttons);
+
+        inputData->CurrentMouseDragButtons &= unchecked((byte)~(byte)buttons);
         inputData->UIFilteredCursorInputsButtonsChanged = true;
     }
 }

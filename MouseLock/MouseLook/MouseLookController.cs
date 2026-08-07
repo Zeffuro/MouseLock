@@ -23,19 +23,36 @@ internal sealed unsafe class MouseLookController
 
     public bool IsAvailable => IsMouseDragAvailable && IsCursorRecenterAvailable;
 
-    public void UpdateMouseActions(UIInputData* inputData, bool allowNewActions)
-        => _mouseButtonActionExecutor.Update(inputData, allowNewActions);
+    public MouseButtonActionFrame CaptureMouseActions(UIInputData* inputData)
+        => _mouseButtonActionExecutor.Capture(inputData);
 
-    public void ApplyCameraInput(UIInputData* inputData)
-        => _mouseDragState.Apply(inputData);
+    public MouseButtonActionResult ExecuteMouseActions(
+        UIInputData* inputData,
+        MouseButtonActionFrame frame,
+        bool allowGameplayActions,
+        bool allowControlActions)
+        => _mouseButtonActionExecutor.Execute(
+            inputData,
+            frame,
+            allowGameplayActions,
+            allowControlActions);
 
-    public void Apply(UIInputData* inputData, MouseLookApplyOptions options)
+    public void SuppressMouseButtons(UIInputData* inputData, MouseButtonFlags buttons)
+        => MouseButtonSuppression.Apply(inputData, buttons);
+
+    public void ApplyCameraInput(UIInputData* inputData, bool classicForwardHeld)
+        => _mouseDragState.Apply(inputData, classicForwardHeld);
+
+    public void Apply(
+        UIInputData* inputData,
+        MouseLookApplyOptions options,
+        bool classicForwardHeld)
     {
         _cursorOverlayState.Release(inputData);
 
         _cursorRecenterState.Apply(inputData, applyScheduledMoveCompensation: true, options.RememberCursorPosition);
-        MouseButtonSuppression.Apply(inputData);
-        _mouseDragState.Apply(inputData);
+        MouseButtonSuppression.Apply(inputData, MouseLookButtons.PhysicalLookButtons);
+        _mouseDragState.Apply(inputData, classicForwardHeld);
         _cursorVisibilityState.Apply();
 
         if (options.ApplyCursorOverlayCompatibility)

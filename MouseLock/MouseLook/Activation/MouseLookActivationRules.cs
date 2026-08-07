@@ -4,10 +4,8 @@ using FFXIVClientStructs.FFXIV.Client.System.Input;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
-using MouseLock.Configuration;
 using MouseLock.Game;
 using MouseLock.Input;
-using MouseLock.Input.MouseActions;
 using MouseLock.Integrations;
 
 namespace MouseLock.MouseLook.Activation;
@@ -16,7 +14,8 @@ internal sealed class MouseLookActivationRules(TextInputMonitor textInputMonitor
 {
     public unsafe MouseLookDecision Evaluate(
         UIInputData* inputData,
-        AtkModule* atkModule = null)
+        AtkModule* atkModule = null,
+        MouseButtonFlags temporaryReleaseButtons = MouseButtonFlags.None)
     {
         if (!PluginState.Config.General.Enabled)
         {
@@ -139,12 +138,54 @@ internal sealed class MouseLookActivationRules(TextInputMonitor textInputMonitor
             return MouseLookDecision.Pause(MouseLookPauseReason.ReleaseModifier);
         }
 
-        if (IsTemporaryReleaseActionHeld(inputData))
+        if (temporaryReleaseButtons != MouseButtonFlags.None)
         {
             return MouseLookDecision.Pause(MouseLookPauseReason.MouseActionRelease);
         }
 
         return MouseLookDecision.Allow();
+    }
+
+    public unsafe bool CanRunControlActionWhileDisabled(
+        UIInputData* inputData,
+        AtkModule* atkModule = null)
+    {
+        if (!Service.ClientState.IsLoggedIn ||
+            PluginState.ConfigWindow.IsOpen ||
+            PluginState.FirstRunWindow is { IsOpen: true } ||
+            inputData is null ||
+            !inputData->CursorInputs.IsGameWindowFocused)
+        {
+            return false;
+        }
+
+        var conditions = PluginState.Config.Activation.Conditions;
+        if (textInputMonitor.IsTextInputActive(atkModule) ||
+            NativeUiState.IsAddonVisible("Talk") ||
+            DalamudUiState.IsBlockingUiActive(conditions))
+        {
+            return false;
+        }
+
+        if (NativeUiState.TryGetFocusedBlockingAddonName(out var focusedAddonName) &&
+            !conditions.IsFocusedAddonIgnored(focusedAddonName))
+        {
+            return false;
+        }
+
+        if (NativeUiState.TryGetHoveredBlockingAddonName(inputData, out var hoveredAddonName) &&
+            !conditions.IsHoveredAddonIgnored(hoveredAddonName))
+        {
+            return false;
+        }
+
+        if (PluginState.Config.Compatibility.DisableDuringTPieRing &&
+            TPieIntegration.IsRingActive)
+        {
+            return false;
+        }
+
+        return !SuspensionRegistry.IsSuspended;
     }
 
     private static unsafe bool IsCombatOrAllowedCountdownActive()
@@ -198,21 +239,4 @@ internal sealed class MouseLookActivationRules(TextInputMonitor textInputMonitor
         => Service.Condition.Any(
             ConditionFlag.BetweenAreas,
             ConditionFlag.BetweenAreas51);
-
-    private static unsafe bool IsTemporaryReleaseActionHeld(UIInputData* inputData)
-    {
-        var heldButtons = inputData->CursorInputs.MouseButtonHeldFlags;
-        var actions = PluginState.Config.MouseActions;
-
-        return IsTemporaryReleaseHeld(MouseButtonActionResolver.ResolveLeft(inputData, actions), heldButtons, MouseButtonFlags.LBUTTON) ||
-               IsTemporaryReleaseHeld(MouseButtonActionResolver.ResolveRight(inputData, actions), heldButtons, MouseButtonFlags.RBUTTON);
-    }
-
-    private static bool IsTemporaryReleaseHeld(
-        MouseButtonGameInputBinding binding,
-        MouseButtonFlags heldButtons,
-        MouseButtonFlags button)
-        => binding.Kind == MouseButtonBindingKind.TemporaryRelease &&
-           (heldButtons & button) != 0;
-
 }

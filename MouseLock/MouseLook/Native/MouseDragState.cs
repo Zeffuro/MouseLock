@@ -30,14 +30,20 @@ internal sealed unsafe class MouseDragState
     public bool IsAvailable => _inputManager is not null;
     public bool IsActive { get; private set; }
 
-    public void Apply(UIInputData* inputData)
+    public void Apply(UIInputData* inputData, bool classicForwardHeld)
     {
         if (_inputManager is null)
         {
             return;
         }
 
-        _inputManager->HeldMouseButtons = MouseLookButtons.VirtualDragState;
+        var heldMouseButtons = MouseLookButtons.VirtualDragState;
+        if (classicForwardHeld)
+        {
+            heldMouseButtons |= InputManager.MouseButtonHoldState.Left;
+        }
+
+        _inputManager->HeldMouseButtons = heldMouseButtons;
         _inputManager->MouseDragDistance = NativeClickSuppressionDragDistance;
         _inputManager->MouseDragDeltaX = -inputData->CursorInputs.DeltaX;
         _inputManager->MouseDragDeltaY = -inputData->CursorInputs.DeltaY;

@@ -13,6 +13,8 @@ public sealed class MouseActionSettings
     private MouseButtonGameInputBinding _rightControlButton = new();
     private MouseButtonGameInputBinding _rightShiftButton = new();
 
+    public bool ClassicMouseMovementEnabled { get; set; }
+
     public MouseButtonGameInputBinding LeftButton
     {
         get => _leftButton;

@@ -1,6 +1,7 @@
 using System;
 using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Game;
+using FFXIVClientStructs.FFXIV.Client.System.Input;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using MouseLock.Input;
@@ -20,6 +21,9 @@ internal sealed class MouseLookService : IDisposable
 
     private MouseLookDecision _lastDecision = MouseLookDecision.Pause(MouseLookPauseReason.InputUnavailable);
     private MouseLookStatus _status = MouseLookStatus.Unavailable(MouseLookPauseReason.HookUnavailable);
+    private MouseButtonFlags _temporaryReleaseButtonsHeld;
+    private MouseButtonFlags _temporaryReleaseButtonsConsumedUntilRelease;
+    private bool _classicForwardHeld;
     private bool _isPadMouseModeEnabled;
 
     public bool IsActive => _controller.IsActive;
@@ -116,12 +120,64 @@ internal sealed class MouseLookService : IDisposable
             if (inputData is not null)
             {
                 _isPadMouseModeEnabled = isPadMouseModeEnabled;
+
+                var mouseLockWasEnabled = PluginState.Config.General.Enabled;
+                var actionFrame = _controller.CaptureMouseActions(inputData);
+                _classicForwardHeld = actionFrame.ClassicForwardHeld;
+
+                _temporaryReleaseButtonsHeld = MouseButtonFlags.None;
                 var decision = EvaluateDecision(inputData, atkModule);
-                _controller.UpdateMouseActions(inputData, allowNewActions: decision.ShouldLock);
+
+                var temporaryReleaseCandidates = mouseLockWasEnabled
+                    ? actionFrame.TemporaryReleaseButtonsHeld
+                    : MouseButtonFlags.None;
+
+                if (decision.ShouldLock && temporaryReleaseCandidates != MouseButtonFlags.None)
+                {
+                    _temporaryReleaseButtonsConsumedUntilRelease |= temporaryReleaseCandidates;
+                }
+
+                _temporaryReleaseButtonsHeld =
+                    temporaryReleaseCandidates & _temporaryReleaseButtonsConsumedUntilRelease;
+
+                if (decision.ShouldLock && _temporaryReleaseButtonsHeld != MouseButtonFlags.None)
+                {
+                    decision = EvaluateDecision(inputData, atkModule);
+                }
+
+                var allowControlActions = decision.ShouldLock ||
+                                          (!PluginState.Config.General.Enabled &&
+                                           actionFrame.HasPressedControlAction &&
+                                           _activationRules.CanRunControlActionWhileDisabled(inputData, atkModule));
+
+                var actionResult = _controller.ExecuteMouseActions(
+                    inputData,
+                    actionFrame,
+                    allowGameplayActions: decision.ShouldLock,
+                    allowControlActions: allowControlActions);
+
+                if (actionResult.ActivationChanged)
+                {
+                    _temporaryReleaseButtonsHeld = MouseButtonFlags.None;
+                    decision = EvaluateDecision(inputData, atkModule);
+                }
+
+                var consumedButtons = actionResult.ConsumedButtons |
+                                      (_temporaryReleaseButtonsConsumedUntilRelease & actionFrame.ActiveButtons);
+                _temporaryReleaseButtonsConsumedUntilRelease &= actionFrame.PressedOrHeldButtons;
 
                 if (decision.ShouldLock)
                 {
                     ApplyMouseLookBeforeNativeInput(inputData);
+                }
+                else
+                {
+                    if (_controller.ShouldRelease)
+                    {
+                        ReleaseMouseLook(inputData);
+                    }
+
+                    _controller.SuppressMouseButtons(inputData, consumedButtons);
                 }
 
                 UpdateStatus(decision);
@@ -173,7 +229,7 @@ internal sealed class MouseLookService : IDisposable
                 return _hooks.RunOriginalCameraInputSource();
             }
 
-            _controller.ApplyCameraInput(inputData);
+            _controller.ApplyCameraInput(inputData, _classicForwardHeld);
             return CameraInputSource.MouseDrag;
         }
         catch (Exception ex)
@@ -205,10 +261,16 @@ internal sealed class MouseLookService : IDisposable
     }
 
     private unsafe void ApplyMouseLook(UIInputData* inputData)
-        => _controller.Apply(inputData, CreateApplyOptions(applyCursorOverlayCompatibility: true));
+        => _controller.Apply(
+            inputData,
+            CreateApplyOptions(applyCursorOverlayCompatibility: true),
+            _classicForwardHeld);
 
     private unsafe void ApplyMouseLookBeforeNativeInput(UIInputData* inputData)
-        => _controller.Apply(inputData, CreateApplyOptions(applyCursorOverlayCompatibility: false));
+        => _controller.Apply(
+            inputData,
+            CreateApplyOptions(applyCursorOverlayCompatibility: false),
+            _classicForwardHeld);
 
     private static MouseLookApplyOptions CreateApplyOptions(bool applyCursorOverlayCompatibility)
         => new(
@@ -242,7 +304,12 @@ internal sealed class MouseLookService : IDisposable
     }
 
     private void ReleaseMouseLookWithoutInput(bool restoreCursor)
-        => _controller.ReleaseWithoutInput(restoreCursor);
+    {
+        _temporaryReleaseButtonsHeld = MouseButtonFlags.None;
+        _temporaryReleaseButtonsConsumedUntilRelease = MouseButtonFlags.None;
+        _classicForwardHeld = false;
+        _controller.ReleaseWithoutInput(restoreCursor);
+    }
 
     private void UpdateStatus(MouseLookDecision decision)
     {
@@ -314,7 +381,12 @@ internal sealed class MouseLookService : IDisposable
         UIInputData* inputData,
         AtkModule* atkModule = null)
     {
-        var activationDecision = WithAvailability(_activationRules.Evaluate(inputData, atkModule));
+        var activationDecision = WithAvailability(
+            _activationRules.Evaluate(
+                inputData,
+                atkModule,
+                _temporaryReleaseButtonsHeld));
+
         if (activationDecision.ShouldLock &&
             PluginState.Config.Activation.Conditions.DisableDuringGamepadMouseMode &&
             _isPadMouseModeEnabled)
@@ -324,5 +396,4 @@ internal sealed class MouseLookService : IDisposable
 
         return _releaseState.Apply(inputData, activationDecision);
     }
-
 }

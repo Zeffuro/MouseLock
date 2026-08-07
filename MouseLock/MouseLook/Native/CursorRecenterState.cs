@@ -58,7 +58,10 @@ internal sealed unsafe class CursorRecenterState
         var wasActive = IsActive;
         if (!wasActive)
         {
-            if (rememberRestorePosition)
+            if (rememberRestorePosition &&
+                IsInsideViewport(
+                    inputData->CursorInputs.PositionX,
+                    inputData->CursorInputs.PositionY))
             {
                 _restorePositionX = inputData->CursorInputs.PositionX;
                 _restorePositionY = inputData->CursorInputs.PositionY;
@@ -180,6 +183,16 @@ internal sealed unsafe class CursorRecenterState
     {
         cursorInputs->DeltaX -= _scheduledCursorMoveDeltaX;
         cursorInputs->DeltaY -= _scheduledCursorMoveDeltaY;
+    }
+
+    private static bool IsInsideViewport(int positionX, int positionY)
+    {
+        var stage = AtkStage.Instance();
+        return stage is not null &&
+               positionX >= 0 &&
+               positionY >= 0 &&
+               positionX < stage->ScreenSize.Width &&
+               positionY < stage->ScreenSize.Height;
     }
 
     private static bool TryGetViewportCenter(out int centerX, out int centerY)
