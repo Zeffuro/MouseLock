@@ -66,21 +66,29 @@ internal sealed class MouseActionsTab(
         }
         ConfigWindow.DrawTooltip(
             "Uses the game's normal LMB + RMB movement while MouseLock is active. " +
-            "A configured LMB/RMB action takes priority.");
+            "All LMB/RMB mouse actions are disabled while this is enabled.");
 
-        DrawMouseButtonActionGroup(
-            "LMB",
-            actions.LeftButton,
-            actions.LeftAltButton,
-            actions.LeftControlButton,
-            actions.LeftShiftButton);
+        if (actions.ClassicMouseMovementEnabled)
+        {
+            ImGui.TextDisabled("LMB/RMB mouse actions are disabled while classic movement is enabled.");
+        }
 
-        DrawMouseButtonActionGroup(
-            "RMB",
-            actions.RightButton,
-            actions.RightAltButton,
-            actions.RightControlButton,
-            actions.RightShiftButton);
+        ConfigWindow.DrawDisabled(actions.ClassicMouseMovementEnabled, () =>
+        {
+            DrawMouseButtonActionGroup(
+                "LMB",
+                actions.LeftButton,
+                actions.LeftAltButton,
+                actions.LeftControlButton,
+                actions.LeftShiftButton);
+
+            DrawMouseButtonActionGroup(
+                "RMB",
+                actions.RightButton,
+                actions.RightAltButton,
+                actions.RightControlButton,
+                actions.RightShiftButton);
+        });
     }
 
     private void DrawMouseButtonActionGroup(
@@ -175,7 +183,8 @@ internal sealed class MouseActionsTab(
 
     private void DrawMouseActionLayerConflictWarning(ReleaseModifierKey layerModifier, MouseButtonGameInputBinding binding)
     {
-        if (binding.Kind == MouseButtonBindingKind.None ||
+        if (config.MouseActions.ClassicMouseMovementEnabled ||
+            binding.Kind == MouseButtonBindingKind.None ||
             config.General.ReleaseModifier != layerModifier)
         {
             return;

@@ -10,6 +10,8 @@ namespace MouseLock.Input.MouseActions;
 
 internal sealed unsafe class MouseButtonActionExecutor
 {
+    private static readonly MouseButtonGameInputBinding NoActionBinding = new();
+
     private readonly ButtonGameInputState _leftButtonGameInputState = new();
     private readonly ButtonGameInputState _rightButtonGameInputState = new();
 
@@ -33,6 +35,18 @@ internal sealed unsafe class MouseButtonActionExecutor
         var leftState = GetButtonState(MouseButtonFlags.LBUTTON);
         var rightState = GetButtonState(MouseButtonFlags.RBUTTON);
 
+        if (actions.ClassicMouseMovementEnabled)
+        {
+            OverrideLatchedBinding(leftState, ref _latchedLeftBinding);
+            OverrideLatchedBinding(rightState, ref _latchedRightBinding);
+
+            return new MouseButtonActionFrame(
+                new MouseButtonActionState(MouseButtonFlags.LBUTTON, NoActionBinding, leftState),
+                new MouseButtonActionState(MouseButtonFlags.RBUTTON, NoActionBinding, rightState),
+                (leftState.Pressed || leftState.Held) &&
+                (rightState.Pressed || rightState.Held));
+        }
+
         var leftBinding = ResolveLatchedBinding(
             leftState,
             MouseButtonActionResolver.ResolveLeft(inputData, actions),
@@ -43,16 +57,10 @@ internal sealed unsafe class MouseButtonActionExecutor
             MouseButtonActionResolver.ResolveRight(inputData, actions),
             ref _latchedRightBinding);
 
-        var classicForwardHeld = actions.ClassicMouseMovementEnabled &&
-                                 leftBinding.Kind == MouseButtonBindingKind.None &&
-                                 rightBinding.Kind == MouseButtonBindingKind.None &&
-                                 (leftState.Pressed || leftState.Held) &&
-                                 (rightState.Pressed || rightState.Held);
-
         return new MouseButtonActionFrame(
             new MouseButtonActionState(MouseButtonFlags.LBUTTON, leftBinding, leftState),
             new MouseButtonActionState(MouseButtonFlags.RBUTTON, rightBinding, rightState),
-            classicForwardHeld);
+            ClassicForwardHeld: false);
     }
 
     public MouseButtonActionResult Execute(
@@ -170,6 +178,15 @@ internal sealed unsafe class MouseButtonActionExecutor
         {
             _controlButtonsConsumedUntilRelease &= ~action.Button;
         }
+    }
+
+    private static void OverrideLatchedBinding(
+        MouseButtonState button,
+        ref MouseButtonGameInputBinding? latchedBinding)
+    {
+        latchedBinding = button.Released || (!button.Pressed && !button.Held)
+            ? null
+            : NoActionBinding;
     }
 
     private static MouseButtonGameInputBinding ResolveLatchedBinding(
