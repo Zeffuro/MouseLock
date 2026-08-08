@@ -54,6 +54,7 @@ internal static class MouseLookStatusFormatter
             MouseLookPauseReason.ExternalSuspension => "External suspension",
             MouseLookPauseReason.ReleaseModifier => "Release modifier",
             MouseLookPauseReason.StickyRelease => "Sticky release",
+            MouseLookPauseReason.ToggleRelease => "Cursor release toggled",
             MouseLookPauseReason.MouseActionRelease => "Mouse action release",
             MouseLookPauseReason.ResumeDelay => "Resume delay",
             MouseLookPauseReason.WaitingForWorldClick => "Waiting for world click",

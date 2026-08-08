@@ -54,7 +54,7 @@ internal sealed class MouseLookService : IDisposable
 
     internal void ForceReleaseCursor()
     {
-        _releaseState.ClearStickyReleaseState();
+        _releaseState.ClearLatchedReleaseState();
         _releaseState.ClearResumeGate();
         ReleaseMouseLook();
         RefreshStatus();
@@ -64,7 +64,7 @@ internal sealed class MouseLookService : IDisposable
     {
         if (!PluginState.Config.General.Enabled)
         {
-            _releaseState.ClearStickyReleaseState();
+            _releaseState.ClearLatchedReleaseState();
         }
 
         RefreshStatus();

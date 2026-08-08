@@ -56,21 +56,22 @@ internal sealed class MouseActionsTab(
 
         var actions = config.MouseActions;
 
-        ConfigWindow.DrawSection("Movement");
+        ConfigWindow.DrawSection("Native mouse movement");
 
         var classicMouseMovementEnabled = actions.ClassicMouseMovementEnabled;
-        if (ImGui.Checkbox("Hold LMB + RMB to move forward", ref classicMouseMovementEnabled))
+        if (ImGui.Checkbox("Use LMB + RMB to move forward", ref classicMouseMovementEnabled))
         {
             actions.ClassicMouseMovementEnabled = classicMouseMovementEnabled;
             save();
         }
         ConfigWindow.DrawTooltip(
-            "Uses the game's normal LMB + RMB movement while MouseLock is active. " +
-            "All LMB/RMB mouse actions are disabled while this is enabled.");
+            "Restores FFXIV's normal two-button mouse movement while MouseLock is active.\n" +
+            "This is unrelated to the Standard and Legacy movement settings.\n" +
+            "All configured LMB/RMB actions are disabled while enabled.");
 
         if (actions.ClassicMouseMovementEnabled)
         {
-            ImGui.TextDisabled("LMB/RMB mouse actions are disabled while classic movement is enabled.");
+            ImGui.TextDisabled("Mouse actions are disabled while native LMB + RMB movement is enabled.");
         }
 
         ConfigWindow.DrawDisabled(actions.ClassicMouseMovementEnabled, () =>

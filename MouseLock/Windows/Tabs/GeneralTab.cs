@@ -25,6 +25,15 @@ internal sealed class GeneralTab(
 
     private static readonly string[] ReleaseModifierLabels = CreateLabels(ReleaseModifierOptions);
 
+    private static readonly ComboOption<ReleaseModifierTapBehavior>[] ReleaseModifierTapBehaviorOptions =
+    [
+        new(ReleaseModifierTapBehavior.None, "Do nothing"),
+        new(ReleaseModifierTapBehavior.UntilWorldClick, "Release until world click or next tap"),
+        new(ReleaseModifierTapBehavior.UntilNextTap, "Release until next tap"),
+    ];
+
+    private static readonly string[] ReleaseModifierTapBehaviorLabels = CreateLabels(ReleaseModifierTapBehaviorOptions);
+
     public void Draw()
     {
         using var tab = ImRaii.TabItem("General");
@@ -54,13 +63,19 @@ internal sealed class GeneralTab(
         }
         ConfigWindow.DrawTooltip("Disable this to leave the cursor centered when MouseLock pauses or releases.");
 
-        var stickyReleaseEnabled = config.General.StickyReleaseEnabled;
-        if (ImGui.Checkbox("Tap release modifier to keep cursor released", ref stickyReleaseEnabled))
+        var releaseModifierTapBehaviorIndex = FindOptionIndex(
+            ReleaseModifierTapBehaviorOptions,
+            config.General.ReleaseModifierTapBehavior);
+        if (ImGui.Combo(
+                "Tap release modifier",
+                ref releaseModifierTapBehaviorIndex,
+                ReleaseModifierTapBehaviorLabels,
+                ReleaseModifierTapBehaviorLabels.Length))
         {
-            config.General.StickyReleaseEnabled = stickyReleaseEnabled;
+            config.General.ReleaseModifierTapBehavior = ReleaseModifierTapBehaviorOptions[releaseModifierTapBehaviorIndex].Value;
             save();
         }
-        ConfigWindow.DrawTooltip("When enabled, tap the release modifier to keep the cursor free. Tap it again or click back into the world to relock.");
+        ConfigWindow.DrawTooltip(GetReleaseModifierTapBehaviorTooltip());
 
         ConfigWindow.DrawSection("Toggle keybind");
         toggleKeybindEditor.Draw(config.ToggleKeybind);
@@ -73,6 +88,30 @@ internal sealed class GeneralTab(
     }
 
     private readonly record struct ComboOption<T>(T Value, string Label);
+
+    private string GetReleaseModifierTapBehaviorTooltip()
+    {
+        if (config.General.ReleaseModifier == ReleaseModifierKey.None)
+        {
+            return "No temporary release modifier is configured. Choose Alt, Control, or Shift to use tap release.";
+        }
+
+        var modifier = config.General.ReleaseModifier;
+        return config.General.ReleaseModifierTapBehavior switch
+        {
+            ReleaseModifierTapBehavior.UntilWorldClick =>
+                $"Hold {modifier} to temporarily release the cursor.\n\n" +
+                $"Selected mode: release until world click or next tap. Tap {modifier} to keep the cursor free until you tap {modifier} again or press LMB/RMB over the game world.\n\n" +
+                "Clicking native game or Dalamud UI should not relock it.",
+            ReleaseModifierTapBehavior.UntilNextTap =>
+                $"Hold {modifier} to temporarily release the cursor.\n\n" +
+                $"Selected mode: release until next tap. Tap {modifier} to toggle cursor release. MouseLock relocks only when you tap {modifier} again.\n\n" +
+                "World clicks and native LMB + RMB movement will not relock it.",
+            _ =>
+                $"Hold {modifier} to temporarily release the cursor.\n\n" +
+                $"Selected mode: do nothing. Tapping {modifier} has no lasting release behavior.",
+        };
+    }
 
     private static string[] CreateLabels<T>(IReadOnlyList<ComboOption<T>> options)
     {

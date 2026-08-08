@@ -4,9 +4,9 @@ using Dalamud.Configuration;
 namespace MouseLock.Configuration;
 
 [Serializable]
-public sealed class SystemConfiguration : IPluginConfiguration
+public sealed partial class SystemConfiguration : IPluginConfiguration
 {
-    public const int CurrentVersion = 3;
+    public const int CurrentVersion = 4;
 
     public int Version { get; set; }
 
@@ -81,44 +81,5 @@ public sealed class SystemConfiguration : IPluginConfiguration
         ToggleKeybind = source.ToggleKeybind;
         Dtr = source.Dtr;
         EnsureInitialized();
-    }
-
-    private void Migrate()
-    {
-        while (Version < CurrentVersion)
-        {
-            switch (Version)
-            {
-                case <= 0:
-                    MigrateFromUnversionedConfig();
-                    Version = 1;
-                    break;
-                case 1:
-                    MigrateToVersion2();
-                    Version = 2;
-                    break;
-                case 2:
-                    MigrateToVersion3();
-                    Version = 3;
-                    break;
-                default:
-                    Version = CurrentVersion;
-                    break;
-            }
-        }
-    }
-
-    private void MigrateFromUnversionedConfig()
-    {
-    }
-
-    private void MigrateToVersion2()
-    {
-        _dtr.Enabled = true;
-    }
-
-    private void MigrateToVersion3()
-    {
-        _general.FirstRunIntroCompleted = true;
     }
 }

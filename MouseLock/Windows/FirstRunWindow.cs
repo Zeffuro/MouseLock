@@ -24,6 +24,15 @@ internal sealed class FirstRunWindow : Window
 
     private static readonly string[] ReleaseModifierLabels = CreateLabels(ReleaseModifierOptions);
 
+    private static readonly ComboOption<ReleaseModifierTapBehavior>[] ReleaseModifierTapBehaviorOptions =
+    [
+        new(ReleaseModifierTapBehavior.None, "Do nothing"),
+        new(ReleaseModifierTapBehavior.UntilWorldClick, "Release until world click or next tap"),
+        new(ReleaseModifierTapBehavior.UntilNextTap, "Release until next tap"),
+    ];
+
+    private static readonly string[] ReleaseModifierTapBehaviorLabels = CreateLabels(ReleaseModifierTapBehaviorOptions);
+
     public FirstRunWindow(SystemConfiguration config)
         : base("MouseLock Quick Start###MouseLockFirstRun")
     {
@@ -82,10 +91,17 @@ internal sealed class FirstRunWindow : Window
             Save();
         }
 
-        var stickyReleaseEnabled = _config.General.StickyReleaseEnabled;
-        if (ImGui.Checkbox("Tap release modifier to keep cursor released", ref stickyReleaseEnabled))
+        var releaseModifierTapBehaviorIndex = FindOptionIndex(
+            ReleaseModifierTapBehaviorOptions,
+            _config.General.ReleaseModifierTapBehavior);
+        if (ImGui.Combo(
+                "Tap release modifier",
+                ref releaseModifierTapBehaviorIndex,
+                ReleaseModifierTapBehaviorLabels,
+                ReleaseModifierTapBehaviorLabels.Length))
         {
-            _config.General.StickyReleaseEnabled = stickyReleaseEnabled;
+            _config.General.ReleaseModifierTapBehavior =
+                ReleaseModifierTapBehaviorOptions[releaseModifierTapBehaviorIndex].Value;
             Save();
         }
 
@@ -114,9 +130,22 @@ internal sealed class FirstRunWindow : Window
     }
 
     private string GetReleaseModifierHelpText()
-        => _config.General.ReleaseModifier == ReleaseModifierKey.None
-            ? "No temporary release modifier is configured. You can add one later in General settings."
-            : $"Hold {_config.General.ReleaseModifier} to temporarily release the cursor. If tap-release is enabled, tap {_config.General.ReleaseModifier} to keep the cursor free until you tap it again or click back into the world.";
+    {
+        if (_config.General.ReleaseModifier == ReleaseModifierKey.None)
+        {
+            return "No temporary release modifier is configured. You can add one later in General settings.";
+        }
+
+        var modifier = _config.General.ReleaseModifier;
+        return _config.General.ReleaseModifierTapBehavior switch
+        {
+            ReleaseModifierTapBehavior.UntilWorldClick =>
+                $"Hold {modifier} to temporarily release the cursor. Tap {modifier} to keep the cursor free until you tap {modifier} again or press LMB/RMB over the game world.",
+            ReleaseModifierTapBehavior.UntilNextTap =>
+                $"Hold {modifier} to temporarily release the cursor. Tap {modifier} to toggle cursor release; MouseLock relocks only when you tap {modifier} again.",
+            _ => $"Hold {modifier} to temporarily release the cursor.",
+        };
+    }
 
     private void CompleteIntro()
     {

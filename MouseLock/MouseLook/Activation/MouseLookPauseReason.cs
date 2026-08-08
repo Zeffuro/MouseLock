@@ -27,6 +27,7 @@ internal enum MouseLookPauseReason
     ExternalSuspension,
     ReleaseModifier,
     StickyRelease,
+    ToggleRelease,
     MouseActionRelease,
     ResumeDelay,
     WaitingForWorldClick,

@@ -86,9 +86,9 @@ internal sealed class ActivationTab(
             }
         });
 
-        ConfigWindow.DrawSection("Resume behavior");
+        ConfigWindow.DrawSection("Resume after automatic pauses");
         var resumePolicyIndex = FindOptionIndex(ResumePolicyOptions, activation.ResumePolicy);
-        if (ImGui.Combo("After a pause ends", ref resumePolicyIndex, ResumePolicyLabels, ResumePolicyLabels.Length))
+        if (ImGui.Combo("After chat, UI, or window-focus pauses", ref resumePolicyIndex, ResumePolicyLabels, ResumePolicyLabels.Length))
         {
             activation.ResumePolicy = ResumePolicyOptions[resumePolicyIndex].Value;
             save();
@@ -108,7 +108,10 @@ internal sealed class ActivationTab(
 
         if (activation.ResumePolicy == MouseLookResumePolicy.WorldClick)
         {
-            ImGui.TextDisabled("MouseLock resumes when you click back into the world, not while a native game or Dalamud window is focused or hovered.");
+            ImGui.TextWrapped(
+                "After an automatic pause ends, MouseLock waits for an LMB/RMB press over the game world. " +
+                "Clicks on the native game or Dalamud UI do not resume it. " +
+                "This setting does not affect the release modifier or mouse-button actions.");
         }
 
         ConfigWindow.DrawSection("Game state pauses");
