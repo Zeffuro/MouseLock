@@ -2,6 +2,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Dalamud.Plugin;
 using Dalamud.Interface.Windowing;
+using KamiToolKit;
+using KamiToolKit.UiOverlay;
 using MouseLock.Windows;
 using MouseLock.Configuration.Persistence;
 using MouseLock.Commands;
@@ -9,18 +11,22 @@ using MouseLock.Input;
 using MouseLock.Input.Keybinds;
 using MouseLock.MouseLook;
 using MouseLock.UI;
+using MouseLock.Targeting;
 
 namespace MouseLock;
 
 public sealed class Plugin : IAsyncDalamudPlugin
 {
+    private bool _nativeInitializationStarted;
+    private OverlayController? _reticleOverlay;
+
     public Plugin(IDalamudPluginInterface pluginInterface)
     {
         pluginInterface.Create<Service>();
         PluginState.Reset();
     }
 
-    public Task LoadAsync(CancellationToken cancellationToken)
+    public async Task LoadAsync(CancellationToken cancellationToken)
     {
         PluginState.Config = ConfigRepository.LoadOrDefault();
         ConfigBackup.DoConfigBackup(Service.PluginInterface);
@@ -31,6 +37,15 @@ public sealed class Plugin : IAsyncDalamudPlugin
         PluginState.WindowSystem.AddWindow(PluginState.ConfigWindow);
         PluginState.WindowSystem.AddWindow(PluginState.FirstRunWindow);
 
+        _nativeInitializationStarted = true;
+        await KamiToolKitLibrary.InitializeAsync(Service.PluginInterface, "MouseLock");
+        cancellationToken.ThrowIfCancellationRequested();
+        await Service.Framework.RunOnFrameworkThread(() =>
+        {
+            _reticleOverlay = new OverlayController();
+            _reticleOverlay.AddNode(new ReticleNode());
+        });
+
         Service.PluginInterface.UiBuilder.Draw += DrawUi;
         Service.PluginInterface.UiBuilder.OpenMainUi += ToggleUi;
         Service.PluginInterface.UiBuilder.OpenConfigUi += ToggleUi;
@@ -38,18 +53,19 @@ public sealed class Plugin : IAsyncDalamudPlugin
         PluginState.CommandHandler = new CommandHandler();
         PluginState.TextInputMonitor = new TextInputMonitor();
         PluginState.MouseLookService = new MouseLookService(PluginState.TextInputMonitor);
+        PluginState.TargetingService = new TargetingService();
         PluginState.ToggleKeybindListener = new ToggleKeybindListener(PluginState.TextInputMonitor);
         PluginState.DtrStatusService = new DtrStatusService();
         PluginState.IpcProvider = new();
 
         ConfigRepository.SaveImmediate(PluginState.Config);
-        return Task.CompletedTask;
     }
 
-    public ValueTask DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
         PluginState.IpcProvider?.Dispose();
         PluginState.CommandHandler?.Dispose();
+        PluginState.TargetingService?.Dispose();
         PluginState.MouseLookService?.Dispose();
         PluginState.ToggleKeybindListener?.Dispose();
         PluginState.TextInputMonitor?.Dispose();
@@ -61,10 +77,23 @@ public sealed class Plugin : IAsyncDalamudPlugin
 
         PluginState.WindowSystem?.RemoveAllWindows();
 
+        if (!Service.Framework.IsFrameworkUnloading)
+        {
+            await Service.Framework.RunOnFrameworkThread(() =>
+            {
+                _reticleOverlay?.Dispose();
+                _reticleOverlay = null;
+            });
+        }
+        if (_nativeInitializationStarted)
+        {
+            await Service.Framework.RunOnFrameworkThread(KamiToolKitLibrary.Dispose);
+            _nativeInitializationStarted = false;
+        }
+
         ConfigRepository.SaveImmediate(PluginState.Config);
 
         PluginState.Reset();
-        return ValueTask.CompletedTask;
     }
 
     private static void DrawUi() => PluginState.WindowSystem.Draw();

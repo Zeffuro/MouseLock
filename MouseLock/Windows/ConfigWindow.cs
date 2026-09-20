@@ -28,6 +28,9 @@ internal sealed partial class ConfigWindow : Window
     private readonly ActivationTab _activationTab;
     private readonly MouseActionsTab _mouseActionsTab;
     private readonly CompatibilityTab _compatibilityTab;
+    private readonly TargetingTab _targetingTab;
+    internal bool IsTargetingTabOpen => IsOpen && _targetingTab.IsSelected;
+    internal bool PreviewReticleTarget => _targetingTab.PreviewTarget;
 
     public ConfigWindow(SystemConfiguration config) : base("MouseLock Config")
     {
@@ -50,6 +53,7 @@ internal sealed partial class ConfigWindow : Window
         _activationTab = new ActivationTab(_config, Save, _nativeAddonExceptionEditor, _dalamudWindowExceptionEditor);
         _mouseActionsTab = new MouseActionsTab(_config, Save, _hotbarSlotPicker);
         _compatibilityTab = new CompatibilityTab(_config, Save);
+        _targetingTab = new TargetingTab(_config, Save);
         SizeConstraints = new WindowSizeConstraints
         {
             MinimumSize = ImGuiHelpers.ScaledVector2(600.0f, 550.0f),
@@ -70,6 +74,7 @@ internal sealed partial class ConfigWindow : Window
         _generalTab.Draw();
         _activationTab.Draw();
         _mouseActionsTab.Draw();
+        _targetingTab.Draw();
         _compatibilityTab.Draw();
 #if DEBUG
         _diagnosticsTab.Draw();

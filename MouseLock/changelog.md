@@ -1,3 +1,6 @@
+# 1.0.1.0
+- Added targeting reticle and automatic soft target targeting.
+
 # 1.0.0.3
 - Added a true toggle option for tap release, so the cursor can stay free until you tap the modifier again.
 - The existing “release until world click or next tap” behavior is still available and remains the default.

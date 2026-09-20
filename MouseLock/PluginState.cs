@@ -7,6 +7,7 @@ using MouseLock.Input.Keybinds;
 using MouseLock.Ipc;
 using MouseLock.MouseLook;
 using MouseLock.UI;
+using MouseLock.Targeting;
 
 namespace MouseLock;
 
@@ -31,6 +32,7 @@ public static class PluginState
     internal static DtrStatusService? DtrStatusService { get; set; }
 
     internal static MouseLockIpcProvider? IpcProvider { get; set; }
+    internal static TargetingService? TargetingService { get; set; }
 
     public static void Reset()
     {
@@ -44,5 +46,6 @@ public static class PluginState
         ToggleKeybindListener = null;
         DtrStatusService = null;
         IpcProvider = null;
+        TargetingService = null;
     }
 }

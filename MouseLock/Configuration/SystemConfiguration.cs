@@ -16,6 +16,7 @@ public sealed partial class SystemConfiguration : IPluginConfiguration
     private MouseLookCompatibilitySettings _compatibility = new();
     private ToggleKeybindSettings _toggleKeybind = new();
     private DtrSettings _dtr = new();
+    private TargetingSettings _targeting = new();
 
     public GeneralSettings General
     {
@@ -53,6 +54,12 @@ public sealed partial class SystemConfiguration : IPluginConfiguration
         set => _dtr = value ?? new DtrSettings();
     }
 
+    public TargetingSettings Targeting
+    {
+        get => _targeting;
+        set => _targeting = value ?? new TargetingSettings();
+    }
+
     public void EnsureInitialized()
     {
         _general ??= new GeneralSettings();
@@ -64,6 +71,8 @@ public sealed partial class SystemConfiguration : IPluginConfiguration
         _toggleKeybind ??= new ToggleKeybindSettings();
         _toggleKeybind.EnsureInitialized();
         _dtr ??= new DtrSettings();
+        _targeting ??= new TargetingSettings();
+        _targeting.EnsureInitialized();
 
         if (Version < CurrentVersion)
         {
@@ -80,6 +89,7 @@ public sealed partial class SystemConfiguration : IPluginConfiguration
         Compatibility = source.Compatibility;
         ToggleKeybind = source.ToggleKeybind;
         Dtr = source.Dtr;
+        Targeting = source.Targeting;
         EnsureInitialized();
     }
 }

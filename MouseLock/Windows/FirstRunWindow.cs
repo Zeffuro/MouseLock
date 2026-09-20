@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Numerics;
 using Dalamud.Bindings.ImGui;
-using Dalamud.Interface.Utility;
 using Dalamud.Interface.Windowing;
 using MouseLock.Configuration;
 using MouseLock.Configuration.Persistence;
@@ -39,7 +38,13 @@ internal sealed class FirstRunWindow : Window
         _config = config;
         IsOpen = !_config.General.FirstRunIntroCompleted;
         ShowCloseButton = true;
-        Size = new Vector2(500.0f, 0.0f);
+        Size = new Vector2(640, 620);
+        SizeCondition = ImGuiCond.FirstUseEver;
+        SizeConstraints = new WindowSizeConstraints
+        {
+            MinimumSize = new Vector2(560, 460),
+            MaximumSize = new Vector2(float.MaxValue),
+        };
     }
 
     public override void Draw()
@@ -56,6 +61,8 @@ internal sealed class FirstRunWindow : Window
 
         ImGui.Spacing();
         ImGui.TextWrapped(GetReleaseModifierHelpText());
+
+        DrawTargetingSettings();
 
         ImGui.Spacing();
         if (ImGui.Button("Got it"))
@@ -127,6 +134,28 @@ internal sealed class FirstRunWindow : Window
             conditions.DisableWhenNativeAddonFocused = disableWhenNativeAddonFocused;
             Save();
         }
+    }
+
+    private void DrawTargetingSettings()
+    {
+        ConfigWindow.DrawSection("Targeting");
+
+        var enabled = _config.Targeting.Enabled;
+        if (ImGui.Checkbox("Target while aiming", ref enabled))
+        {
+            _config.Targeting.Enabled = enabled;
+            Save();
+        }
+        ImGui.TextWrapped("Pick a soft or focus target by aiming at it while moving the camera.");
+
+        var showReticle = _config.Targeting.ShowReticle;
+        if (ImGui.Checkbox("Show reticle during mouselook", ref showReticle))
+        {
+            _config.Targeting.ShowReticle = showReticle;
+            Save();
+        }
+        ImGui.TextWrapped("Choose target types, aiming tolerance and reticle appearance in the Targeting tab.");
+        ImGui.TextWrapped("To target on click, bind 'Target under reticle' to LMB or RMB in Mouse Actions. It works with automatic targeting off.");
     }
 
     private string GetReleaseModifierHelpText()

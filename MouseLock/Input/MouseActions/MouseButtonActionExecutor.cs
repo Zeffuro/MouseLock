@@ -17,7 +17,7 @@ internal sealed unsafe class MouseButtonActionExecutor
 
     private MouseButtonGameInputBinding? _latchedLeftBinding;
     private MouseButtonGameInputBinding? _latchedRightBinding;
-    private MouseButtonFlags _controlButtonsConsumedUntilRelease;
+    private MouseButtonFlags _buttonsConsumedUntilRelease;
 
     public MouseButtonActionFrame Capture(UIInputData* inputData)
     {
@@ -78,7 +78,7 @@ internal sealed unsafe class MouseButtonActionExecutor
                 allowGameplayActions,
                 allowControlActions))
         {
-            _controlButtonsConsumedUntilRelease |= frame.Left.Button;
+            _buttonsConsumedUntilRelease |= frame.Left.Button;
             activationChanged = true;
         }
 
@@ -89,11 +89,11 @@ internal sealed unsafe class MouseButtonActionExecutor
                 allowGameplayActions,
                 allowControlActions))
         {
-            _controlButtonsConsumedUntilRelease |= frame.Right.Button;
+            _buttonsConsumedUntilRelease |= frame.Right.Button;
             activationChanged = true;
         }
 
-        var consumedButtons = _controlButtonsConsumedUntilRelease & frame.ActiveButtons;
+        var consumedButtons = _buttonsConsumedUntilRelease & frame.ActiveButtons;
 
         ClearActionAfterRelease(frame.Left);
         ClearActionAfterRelease(frame.Right);
@@ -113,10 +113,10 @@ internal sealed unsafe class MouseButtonActionExecutor
         _rightButtonGameInputState.EmergencyClear();
         _latchedLeftBinding = null;
         _latchedRightBinding = null;
-        _controlButtonsConsumedUntilRelease = MouseButtonFlags.None;
+        _buttonsConsumedUntilRelease = MouseButtonFlags.None;
     }
 
-    private static bool UpdateButton(
+    private bool UpdateButton(
         UIInputData* inputData,
         ButtonGameInputState gameInputState,
         MouseButtonActionState action,
@@ -129,6 +129,16 @@ internal sealed unsafe class MouseButtonActionExecutor
 
         switch (binding.Kind)
         {
+            case MouseButtonBindingKind.TargetUnderReticle:
+                gameInputState.AdvanceRelease(inputData);
+                if (allowGameplayActions && button.Pressed)
+                {
+                    _buttonsConsumedUntilRelease |= action.Button;
+                    PluginState.TargetingService?.TargetUnderReticle();
+                }
+
+                return false;
+
             case MouseButtonBindingKind.HotbarSlot:
                 gameInputState.AdvanceRelease(inputData);
                 if (allowGameplayActions && button.Pressed)
@@ -176,7 +186,7 @@ internal sealed unsafe class MouseButtonActionExecutor
         if (action.State.Released ||
             (!action.State.Pressed && !action.State.Held))
         {
-            _controlButtonsConsumedUntilRelease &= ~action.Button;
+            _buttonsConsumedUntilRelease &= ~action.Button;
         }
     }
 

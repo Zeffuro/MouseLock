@@ -25,6 +25,7 @@ internal sealed class MouseActionsTab(
         new(MouseButtonBindingKind.TemporaryRelease, "Temporary release"),
         new(MouseButtonBindingKind.ToggleMouseLock, "Toggle MouseLock"),
         new(MouseButtonBindingKind.OpenConfig, "Open config"),
+        new(MouseButtonBindingKind.TargetUnderReticle, "Target under reticle"),
     ];
 
     private static readonly string[] BindingKindLabels = CreateLabels(BindingKindOptions);
@@ -157,6 +158,9 @@ internal sealed class MouseActionsTab(
 
         switch (binding.Kind)
         {
+            case MouseButtonBindingKind.TargetUnderReticle:
+                ConfigWindow.DrawTooltip("Hard-targets what's under the reticle on click. Uses the filters in Targeting.");
+                break;
             case MouseButtonBindingKind.GameInput:
                 DrawGameInputBinding(binding);
                 break;

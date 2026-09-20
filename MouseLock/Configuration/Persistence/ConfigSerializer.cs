@@ -9,6 +9,7 @@ internal static class ConfigSerializer
     private static readonly JsonSerializerOptions Options = new()
     {
         WriteIndented = true,
+        IncludeFields = true,
         PropertyNameCaseInsensitive = true,
         ReadCommentHandling = JsonCommentHandling.Skip,
         AllowTrailingCommas = true,

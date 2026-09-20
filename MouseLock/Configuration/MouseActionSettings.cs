@@ -106,6 +106,7 @@ public enum MouseButtonBindingKind
     TemporaryRelease = 3,
     ToggleMouseLock = 4,
     OpenConfig = 5,
+    TargetUnderReticle = 6,
 }
 
 public enum CuratedGameInput
