@@ -1,4 +1,5 @@
 using System;
+using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
@@ -85,9 +86,10 @@ internal sealed unsafe class TargetingService : IDisposable
     {
         HasCandidate = false;
         var settings = PluginState.Config.Targeting;
-        _actionGuard.SetEnabled(settings.Enabled && settings.Mode == AimTargetMode.Soft &&
+        var autoTargetingEnabled = IsAutoTargetingEnabled(settings);
+        _actionGuard.SetEnabled(autoTargetingEnabled && settings.Mode == AimTargetMode.Soft &&
                                 settings.KeepSoftTargetAfterAction);
-        if (!settings.Enabled && !settings.ShowReticle && _ownedSoftTarget == null)
+        if (!autoTargetingEnabled && !settings.ShowReticle && _ownedSoftTarget == null)
         {
             _cameraMotion = default;
             return;
@@ -110,7 +112,7 @@ internal sealed unsafe class TargetingService : IDisposable
             return;
         }
 
-        if (!settings.Enabled || settings.Mode != AimTargetMode.Soft ||
+        if (!autoTargetingEnabled || settings.Mode != AimTargetMode.Soft ||
             (OwnsSoftTarget(targets) && !ScreenTargetPicker.IsEligible(targets->SoftTarget, settings)))
             ReleaseSoftTarget(targets);
 
@@ -122,13 +124,13 @@ internal sealed unsafe class TargetingService : IDisposable
             return;
         }
         var cameraMoved = _cameraMotion.Update(camera, camera->DirH, camera->DirV);
-        if (!settings.Enabled)
+        if (!autoTargetingEnabled)
             _cameraMotion = default;
-        if (!settings.ShowReticle && (!settings.Enabled || !cameraMoved)) return;
+        if (!settings.ShowReticle && (!autoTargetingEnabled || !cameraMoved)) return;
 
         var candidate = ScreenTargetPicker.Pick(targets, point, settings);
         HasCandidate = candidate != null;
-        if (!settings.Enabled || !cameraMoved) return;
+        if (!autoTargetingEnabled || !cameraMoved) return;
         if (candidate == null)
         {
             if (settings.Mode == AimTargetMode.Soft && settings.KeepSoftTargetOnLookAway &&
@@ -164,12 +166,15 @@ internal sealed unsafe class TargetingService : IDisposable
         if (_failed || !CanTarget()) return false;
 
         var settings = PluginState.Config.Targeting;
-        if (!settings.Enabled || settings.Mode != AimTargetMode.Soft) return false;
+        if (!IsAutoTargetingEnabled(settings) || settings.Mode != AimTargetMode.Soft) return false;
         if (!settings.KeepSoftTargetAfterAction) return false;
 
         var targets = TargetSystem.Instance();
         return OwnsSoftTarget(targets) && ScreenTargetPicker.IsEligible(targets->SoftTarget, settings);
     }
+
+    private static bool IsAutoTargetingEnabled(TargetingSettings settings)
+        => settings.Enabled && (!settings.OnlyInCombat || Service.Condition[ConditionFlag.InCombat]);
 
     private static bool CanTarget()
     {

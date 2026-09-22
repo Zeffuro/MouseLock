@@ -1,3 +1,8 @@
+# 1.0.1.2
+- Add an option to disable auto-target when not in combat.
+- Add toggle and slider to allow toggling hiding the crosshair based on depth and how far.
+- Improved Dalamud and Game Window exception config.
+
 # 1.0.1.1
 - Fixed not being able to use gamepad camera while in MouseLook.
 - Added a setting to freely switch between MouseLook and gamepad camera in gamepad mode.

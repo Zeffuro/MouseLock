@@ -1,5 +1,5 @@
+using System.Collections.Generic;
 using System.Numerics;
-using FFXIVClientStructs.FFXIV.Component.GUI;
 using KamiToolKit.Nodes;
 
 namespace MouseLock.Targeting;
@@ -11,16 +11,15 @@ internal sealed class CrosshairNode : ResNode
     private readonly ColorImageNode _horizontal = new();
     private readonly ColorImageNode _vertical = new();
 
+    internal IReadOnlyList<ColorImageNode> Parts { get; }
+
     internal CrosshairNode()
     {
-        _horizontalBorder.AddNodeFlags(NodeFlags.UseDepthBasedPriority);
-        _verticalBorder.AddNodeFlags(NodeFlags.UseDepthBasedPriority);
-        _horizontal.AddNodeFlags(NodeFlags.UseDepthBasedPriority);
-        _vertical.AddNodeFlags(NodeFlags.UseDepthBasedPriority);
-        _horizontalBorder.AttachNode(this);
-        _verticalBorder.AttachNode(this);
-        _horizontal.AttachNode(this);
-        _vertical.AttachNode(this);
+        Parts = [_horizontalBorder, _verticalBorder, _horizontal, _vertical];
+        foreach (var part in Parts)
+        {
+            part.AttachNode(this);
+        }
     }
 
     public override Vector4 Color

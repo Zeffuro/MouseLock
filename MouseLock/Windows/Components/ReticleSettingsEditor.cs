@@ -79,6 +79,23 @@ internal sealed class ReticleSettingsEditor(SystemConfiguration config, Action s
             settings.AnimateReticle = animate;
             save();
         }
+        var depthEnabled = settings.ReticleDepthEnabled;
+        if (ImGui.Checkbox("Hide reticle behind scenery", ref depthEnabled))
+        {
+            settings.ReticleDepthEnabled = depthEnabled;
+            save();
+        }
+        ConfigWindow.DrawTooltip("Uses scene depth to hide covered parts of the reticle. Some effects and transparent surfaces may not cover it correctly. Disable for a normal overlay.");
+        using (ImRaii.Disabled(!settings.ReticleDepthEnabled))
+        {
+            var distance = settings.ReticleDistance;
+            if (ImGui.SliderFloat("Reticle distance", ref distance, 0.1f, 100, "%.1f m", ImGuiSliderFlags.Logarithmic))
+            {
+                settings.ReticleDistance = Math.Clamp(distance, 0.1f, 100);
+                save();
+            }
+            ConfigWindow.DrawTooltip("Distance from the camera for scenery occlusion. Does not change reticle size, aim position, or targeting range.");
+        }
         ImGui.Checkbox("Preview target", ref _previewTarget);
     }
 

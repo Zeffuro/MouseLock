@@ -117,6 +117,7 @@ internal sealed class ActivationTab(
         ConfigWindow.DrawSection("Game state pauses");
         DrawGameStatePauseSettings(conditions);
 
+        ConfigWindow.DrawSection("Window exceptions");
         dalamudWindowExceptionEditor.Draw(conditions);
         nativeAddonExceptionEditor.Draw(conditions);
     }

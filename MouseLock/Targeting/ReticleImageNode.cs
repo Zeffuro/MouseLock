@@ -1,6 +1,5 @@
 using System.Numerics;
 using Dalamud.Interface.Textures;
-using FFXIVClientStructs.FFXIV.Component.GUI;
 using KamiToolKit.Enums;
 using KamiToolKit.Nodes;
 
@@ -13,7 +12,6 @@ internal sealed class ReticleImageNode : ImGuiImageNode
     internal ReticleImageNode()
     {
         WrapMode = WrapMode.Stretch;
-        AddNodeFlags(NodeFlags.UseDepthBasedPriority);
     }
 
     internal bool ShowFile(string fileName)

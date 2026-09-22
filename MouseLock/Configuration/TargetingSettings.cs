@@ -31,6 +31,7 @@ public enum AimTargetKinds
 public sealed class TargetingSettings
 {
     public bool Enabled { get; set; }
+    public bool OnlyInCombat { get; set; }
     public AimTargetMode Mode { get; set; } = AimTargetMode.Soft;
     public AimTargetKinds TargetKinds { get; set; } = AimTargetKinds.Enemies;
     public bool IncludeDeadTargets { get; set; }
@@ -38,6 +39,8 @@ public sealed class TargetingSettings
     public bool KeepSoftTargetOnLookAway { get; set; } = true;
     public bool KeepSoftTargetAfterAction { get; set; } = true;
     public bool ShowReticle { get; set; }
+    public bool ReticleDepthEnabled { get; set; } = true;
+    public float ReticleDistance { get; set; } = 10;
     public ReticleStyle ReticleStyle { get; set; } = ReticleStyle.Preset;
     public float VerticalOffset { get; set; } = 10;
     public float ReticleSize { get; set; } = 30;
@@ -58,6 +61,7 @@ public sealed class TargetingSettings
         AimTolerance = float.IsFinite(AimTolerance) ? Math.Clamp(AimTolerance, 0, 60) : 20;
         VerticalOffset = float.IsFinite(VerticalOffset) ? Math.Clamp(VerticalOffset, -45, 45) : 10;
         ReticleSize = float.IsFinite(ReticleSize) ? Math.Clamp(ReticleSize, 4, 160) : 30;
+        ReticleDistance = float.IsFinite(ReticleDistance) ? Math.Clamp(ReticleDistance, 0.1f, 100) : 10;
         ReticleIconId = Math.Clamp(ReticleIconId, 1u, 999999u);
         ReticleDesign = Math.Clamp(ReticleDesign, 1, 6);
         NormalVariant = Math.Clamp(NormalVariant, 0, 3);

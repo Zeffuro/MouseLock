@@ -10,93 +10,63 @@ namespace MouseLock.Windows.Components;
 
 internal sealed class NativeAddonExceptionEditor(Action save)
 {
+    private readonly WindowExceptionTable _table = new();
+
     public void Draw(MouseLookConditionSettings conditions)
     {
-        var hasFocusedAddon = NativeUiState.TryGetFocusedBlockingAddonName(out var focusedAddonName);
-        var currentAddonName = hasFocusedAddon
-            ? focusedAddonName
-            : string.Empty;
+        using var id = ImRaii.PushId("NativeExceptions");
+        var names = conditions.IgnoredFocusedAddonNames
+            .Concat(conditions.IgnoredHoveredAddonNames)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(name => name, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        if (!ImGui.CollapsingHeader($"Game windows ({names.Count})###Header", ImGuiTreeNodeFlags.DefaultOpen)) return;
+
         var canUseExceptions = conditions.DisableWhenNativeAddonFocused || conditions.DisableWhenNativeAddonHovered;
-
-        ConfigWindow.DrawSection("Native window exceptions");
-        using (ImRaii.Disabled(!canUseExceptions))
-        {
-            ImGui.TextDisabled("Allow specific game windows to keep MouseLock active.");
-            ImGui.TextUnformatted($"Current game window: {ConfigWindow.DisplayAddonName(currentAddonName)}");
-
-            if (!string.IsNullOrEmpty(currentAddonName))
-            {
-                ImGui.SameLine();
-                if (ImGui.SmallButton("Allow this window"))
-                {
-                    AddAllowedAddonName(conditions, currentAddonName);
-                }
-            }
-
-            DrawAllowedAddonNameList(conditions);
-        }
-
         if (!canUseExceptions)
+            ImGui.TextWrapped("Enable a game window pause option above to use these exceptions.");
+
+        using var disabled = ImRaii.Disabled(!canUseExceptions);
+        var hasFocusedAddon = NativeUiState.TryGetFocusedBlockingAddonName(out var name);
+        ImGui.TextWrapped($"Focused game window: {ConfigWindow.DisplayAddonName(name)}");
+        var alreadyAllowed = conditions.IsFocusedAddonIgnored(name) && conditions.IsHoveredAddonIgnored(name);
+        using (ImRaii.Disabled(!hasFocusedAddon || alreadyAllowed))
         {
-            ImGui.TextDisabled("Enable a native-window pause option above to use exceptions.");
+            if (ImGui.Button(alreadyAllowed ? "Already allowed" : "Add exception"))
+                AddAllowedAddonName(conditions, name);
         }
+        ConfigWindow.DrawTooltip("Keep MouseLock active when this game window is focused or hovered.");
+        ImGui.Spacing();
+
+        _table.Draw(names.Select(addon => new WindowExceptionEntry(addon, GetRule(conditions, addon),
+            () => RemoveAllowedAddonName(conditions, addon))).ToList());
     }
+
+    private static string GetRule(MouseLookConditionSettings conditions, string name)
+        => conditions.IsFocusedAddonIgnored(name)
+            ? conditions.IsHoveredAddonIgnored(name) ? "Focus + hover" : "Focus"
+            : "Hover";
 
     private void AddAllowedAddonName(MouseLookConditionSettings conditions, string addonName)
     {
         var changed = AddAddonName(conditions.IgnoredFocusedAddonNames, addonName);
         changed |= AddAddonName(conditions.IgnoredHoveredAddonNames, addonName);
-
-        if (changed)
-        {
-            save();
-        }
+        if (changed) save();
     }
 
-    private static bool AddAddonName(List<string> addonNames, string addonName)
+    private static bool AddAddonName(List<string> names, string name)
     {
-        if (addonNames.Any(existing => string.Equals(existing, addonName, System.StringComparison.OrdinalIgnoreCase)))
-        {
-            return false;
-        }
+        if (names.Contains(name, StringComparer.OrdinalIgnoreCase)) return false;
 
-        addonNames.Add(addonName);
-        addonNames.Sort(System.StringComparer.OrdinalIgnoreCase);
+        names.Add(name);
+        names.Sort(StringComparer.OrdinalIgnoreCase);
         return true;
-    }
-
-    private void DrawAllowedAddonNameList(MouseLookConditionSettings conditions)
-    {
-        var addonNames = conditions.IgnoredFocusedAddonNames
-            .Concat(conditions.IgnoredHoveredAddonNames)
-            .Distinct(System.StringComparer.OrdinalIgnoreCase)
-            .OrderBy(addonName => addonName, System.StringComparer.OrdinalIgnoreCase)
-            .ToList();
-
-        ImGui.TextUnformatted("Allowed windows");
-        if (addonNames.Count == 0)
-        {
-            ImGui.TextDisabled("None");
-            return;
-        }
-
-        foreach (var addonName in addonNames)
-        {
-            ImGui.BulletText(addonName);
-            ImGui.SameLine();
-
-            if (ImGui.SmallButton($"Remove##AllowedNativeAddon{addonName}"))
-            {
-                RemoveAllowedAddonName(conditions, addonName);
-                return;
-            }
-        }
     }
 
     private void RemoveAllowedAddonName(MouseLookConditionSettings conditions, string addonName)
     {
-        conditions.IgnoredFocusedAddonNames.RemoveAll(existing => string.Equals(existing, addonName, System.StringComparison.OrdinalIgnoreCase));
-        conditions.IgnoredHoveredAddonNames.RemoveAll(existing => string.Equals(existing, addonName, System.StringComparison.OrdinalIgnoreCase));
+        conditions.IgnoredFocusedAddonNames.RemoveAll(existing => string.Equals(existing, addonName, StringComparison.OrdinalIgnoreCase));
+        conditions.IgnoredHoveredAddonNames.RemoveAll(existing => string.Equals(existing, addonName, StringComparison.OrdinalIgnoreCase));
         save();
     }
 }

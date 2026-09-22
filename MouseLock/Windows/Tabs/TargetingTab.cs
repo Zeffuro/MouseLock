@@ -30,6 +30,17 @@ internal sealed class TargetingTab(SystemConfiguration config, Action save)
         ImGui.TextWrapped("Updates your target when you move the camera during mouselook.");
         ImGui.TextWrapped("For targeting on click, bind 'Target under reticle' in Mouse Actions. Works with automatic targeting off.");
 
+        using (ImRaii.Disabled(!settings.Enabled))
+        {
+            var onlyInCombat = settings.OnlyInCombat;
+            if (ImGui.Checkbox("Only auto-target in combat", ref onlyInCombat))
+            {
+                settings.OnlyInCombat = onlyInCombat;
+                save();
+            }
+            ConfigWindow.DrawTooltip("Outside combat, automatic targeting stops and its soft target is released. Mouse look, the reticle, and targeting on click still work. Existing pause settings still apply.");
+        }
+
         var tolerance = settings.AimTolerance;
         if (ImGui.SliderFloat("Aim tolerance", ref tolerance, 0, 60, "%.0f px"))
         {

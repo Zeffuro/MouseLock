@@ -1,6 +1,7 @@
 using System;
 using System.Numerics;
 using FFXIVClientStructs.FFXIV.Component.GUI;
+using KamiToolKit.BaseTypes;
 using KamiToolKit.Enums;
 using KamiToolKit.Nodes;
 using KamiToolKit.Timelines;
@@ -15,12 +16,14 @@ internal sealed unsafe class ReticleNode : OverlayNode
     private readonly ResNode _contentNode = new();
     private readonly ReticleImageNode _imageNode = new();
     private readonly CrosshairNode _crosshairNode = new();
+    private readonly NodeBase[] _depthNodes;
+    private bool? _depthEnabled;
 
     public override OverlayLayer OverlayLayer => OverlayLayer.BehindUserInterface;
 
     internal ReticleNode()
     {
-        Node->Depth = 0.01f;
+        _depthNodes = [_imageNode, .. _crosshairNode.Parts];
         _contentNode.AttachNode(this);
         _imageNode.AttachNode(_contentNode);
         _crosshairNode.AttachNode(_contentNode);
@@ -56,8 +59,30 @@ internal sealed unsafe class ReticleNode : OverlayNode
         Size = new Vector2(settings.ReticleSize * 2);
         Position = point - Size / 2;
         RotationDegrees = settings.ReticleRotation;
+        UpdateDepth(settings);
         UpdateAppearance(settings, hasTarget);
         Timeline?.PlayAnimation(!settings.AnimateReticle ? 3 : hasTarget ? 1 : 2);
+    }
+
+    private void UpdateDepth(TargetingSettings settings)
+    {
+        var depth = 0f;
+        var enabled = settings.ReticleDepthEnabled && ReticleDepth.TryGet(settings.ReticleDistance, out depth);
+        if (_depthEnabled == enabled && Node->Depth == depth) return;
+
+        if (_depthEnabled != enabled)
+        {
+            foreach (var child in _depthNodes)
+            {
+                child.NodeFlags = enabled
+                    ? child.NodeFlags | NodeFlags.UseDepthBasedPriority
+                    : child.NodeFlags & ~NodeFlags.UseDepthBasedPriority;
+            }
+            _depthEnabled = enabled;
+        }
+
+        Node->Depth = depth;
+        MarkDirty();
     }
 
     private void UpdateAppearance(TargetingSettings settings, bool hasTarget)

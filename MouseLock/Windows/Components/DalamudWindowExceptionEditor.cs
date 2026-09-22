@@ -10,169 +10,79 @@ namespace MouseLock.Windows.Components;
 
 internal sealed class DalamudWindowExceptionEditor(Action save)
 {
+    private readonly WindowExceptionTable _table = new();
+
     public void Draw(MouseLookConditionSettings conditions)
     {
+        using var id = ImRaii.PushId("DalamudExceptions");
+        var count = conditions.IgnoredDalamudWindowNames.Count + conditions.IgnoredDalamudWindowSystemNamespaces.Count;
+        if (!ImGui.CollapsingHeader($"Dalamud windows ({count})###Header", ImGuiTreeNodeFlags.DefaultOpen)) return;
+
+        if (!conditions.DisableWhenDalamudWindowFocused)
+            ImGui.TextWrapped("Enable the Dalamud window pause option above to use these exceptions.");
+
+        using var disabled = ImRaii.Disabled(!conditions.DisableWhenDalamudWindowFocused);
         var focus = DalamudUiState.LastExternalFocus;
-        var suggestedWindowPattern = GetSuggestedWindowPattern(focus.WindowName);
-        var canUseExceptions = conditions.DisableWhenDalamudWindowFocused;
-
-        ConfigWindow.DrawSection("Dalamud window exceptions");
-        using (ImRaii.Disabled(!canUseExceptions))
+        ImGui.TextWrapped($"Last focused: {ConfigWindow.DisplayAddonName(focus.WindowName)}");
+        ConfigWindow.DrawTooltip($"Window system: {ConfigWindow.DisplayAddonName(focus.WindowSystemNamespace)}");
+        using (ImRaii.Disabled(focus.IsEmpty))
         {
-            ImGui.TextDisabled("Allow specific Dalamud/ImGui windows or child-window prefixes to keep MouseLock active.");
-            ImGui.TextWrapped($"Last external window system: {ConfigWindow.DisplayAddonName(focus.WindowSystemNamespace)}");
-            ImGui.TextWrapped($"Last external window: {ConfigWindow.DisplayAddonName(focus.WindowName)}");
-
-            if (!string.IsNullOrEmpty(focus.WindowName))
-            {
-                if (ImGui.SmallButton("Allow exact window"))
-                {
-                    AddAllowedWindowName(conditions, focus.WindowName);
-                }
-
-                if (!string.IsNullOrEmpty(suggestedWindowPattern))
-                {
-                    ImGui.SameLine();
-                    if (ImGui.SmallButton("Allow window family"))
-                    {
-                        AddAllowedWindowName(conditions, suggestedWindowPattern);
-                    }
-                }
-            }
-
-            if (!string.IsNullOrEmpty(focus.WindowSystemNamespace))
-            {
-                ImGui.SameLine();
-                if (ImGui.SmallButton("Allow entire window system"))
-                {
-                    AddAllowedWindowSystemNamespace(conditions, focus.WindowSystemNamespace);
-                }
-            }
-
-            if (focus.IsEmpty)
-            {
-                ImGui.TextDisabled("Focus another plugin window, then return here to allow it.");
-            }
-
-            ImGui.TextDisabled("Entries ending in * match by prefix, which is useful for plugin child windows with generated names.");
-            DrawAllowedWindowNameList(conditions);
-            DrawAllowedWindowSystemNamespaceList(conditions);
+            if (ImGui.Button("Add exception"))
+                ImGui.OpenPopup("AddException");
         }
+        ConfigWindow.DrawTooltip("Focus another plugin window, then return here to allow it.");
+        DrawAddMenu(conditions, focus);
+        ImGui.Spacing();
 
-        if (!canUseExceptions)
-        {
-            ImGui.TextDisabled("Enable the Dalamud/ImGui window pause option above to use exceptions.");
-        }
+        var entries = conditions.IgnoredDalamudWindowNames
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Select(name => CreateEntry(conditions.IgnoredDalamudWindowNames, name,
+                name.EndsWith('*') ? "Window family" : "Exact window"))
+            .Concat(conditions.IgnoredDalamudWindowSystemNamespaces
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .Select(name => CreateEntry(conditions.IgnoredDalamudWindowSystemNamespaces, name, "Window system")))
+            .OrderBy(entry => entry.Name, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(entry => entry.Rule)
+            .ToList();
+        _table.Draw(entries);
     }
 
-    private void AddAllowedWindowSystemNamespace(MouseLookConditionSettings conditions, string windowSystemNamespace)
+    private void DrawAddMenu(MouseLookConditionSettings conditions, DalamudWindowFocus focus)
     {
-        if (AddName(conditions.IgnoredDalamudWindowSystemNamespaces, windowSystemNamespace))
+        using var popup = ImRaii.Popup("AddException");
+        if (!popup) return;
+
+        DrawAddOption("This window", conditions.IgnoredDalamudWindowNames, focus.WindowName);
+        DrawAddOption("Window family", conditions.IgnoredDalamudWindowNames, GetSuggestedWindowPattern(focus.WindowName));
+        DrawAddOption("Entire window system", conditions.IgnoredDalamudWindowSystemNamespaces, focus.WindowSystemNamespace);
+    }
+
+    private void DrawAddOption(string label, List<string> names, string name)
+    {
+        var normalizedName = name?.Trim() ?? string.Empty;
+        var alreadyAllowed = names.Contains(normalizedName, StringComparer.OrdinalIgnoreCase);
+        using var disabled = ImRaii.Disabled(normalizedName.Length == 0 || alreadyAllowed);
+        if (ImGui.Selectable(alreadyAllowed ? $"{label} (already allowed)" : label))
         {
+            names.Add(normalizedName);
+            names.Sort(StringComparer.OrdinalIgnoreCase);
             save();
         }
+        ConfigWindow.DrawTooltip(string.IsNullOrEmpty(name) ? "Not available for this window." : name);
     }
 
-    private void AddAllowedWindowName(MouseLookConditionSettings conditions, string windowName)
-    {
-        if (AddName(conditions.IgnoredDalamudWindowNames, windowName))
+    private WindowExceptionEntry CreateEntry(List<string> names, string name, string rule)
+        => new(name, rule, () =>
         {
+            names.RemoveAll(existing => string.Equals(existing, name, StringComparison.OrdinalIgnoreCase));
             save();
-        }
-    }
-
-    private static bool AddName(List<string> names, string name)
-    {
-        var normalizedName = name.Trim();
-        if (string.IsNullOrEmpty(normalizedName) ||
-            names.Any(existing => string.Equals(existing, normalizedName, StringComparison.OrdinalIgnoreCase)))
-        {
-            return false;
-        }
-
-        names.Add(normalizedName);
-        names.Sort(StringComparer.OrdinalIgnoreCase);
-        return true;
-    }
-
-    private void DrawAllowedWindowNameList(MouseLookConditionSettings conditions)
-    {
-        var windowNames = conditions.IgnoredDalamudWindowNames
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .OrderBy(windowName => windowName, StringComparer.OrdinalIgnoreCase)
-            .ToList();
-
-        ImGui.TextUnformatted("Allowed Dalamud windows / prefixes");
-        if (windowNames.Count == 0)
-        {
-            ImGui.TextDisabled("None");
-            return;
-        }
-
-        foreach (var windowName in windowNames)
-        {
-            ImGui.BulletText(windowName);
-            ImGui.SameLine();
-
-            using var id = ImRaii.PushId($"AllowedDalamudWindow{windowName}");
-            if (ImGui.SmallButton("Remove"))
-            {
-                RemoveAllowedWindowName(conditions, windowName);
-                return;
-            }
-        }
-    }
-
-    private void DrawAllowedWindowSystemNamespaceList(MouseLookConditionSettings conditions)
-    {
-        var windowSystemNamespaces = conditions.IgnoredDalamudWindowSystemNamespaces
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .OrderBy(windowSystemNamespace => windowSystemNamespace, StringComparer.OrdinalIgnoreCase)
-            .ToList();
-
-        ImGui.TextUnformatted("Allowed entire Dalamud window systems");
-        if (windowSystemNamespaces.Count == 0)
-        {
-            ImGui.TextDisabled("None");
-            return;
-        }
-
-        foreach (var windowSystemNamespace in windowSystemNamespaces)
-        {
-            ImGui.BulletText(windowSystemNamespace);
-            ImGui.SameLine();
-
-            using var id = ImRaii.PushId($"AllowedDalamudWindowSystem{windowSystemNamespace}");
-            if (ImGui.SmallButton("Remove"))
-            {
-                RemoveAllowedWindowSystemNamespace(conditions, windowSystemNamespace);
-                return;
-            }
-        }
-    }
-
-    private void RemoveAllowedWindowSystemNamespace(MouseLookConditionSettings conditions, string windowSystemNamespace)
-    {
-        conditions.IgnoredDalamudWindowSystemNamespaces.RemoveAll(existing => string.Equals(existing, windowSystemNamespace, StringComparison.OrdinalIgnoreCase));
-        save();
-    }
-
-    private void RemoveAllowedWindowName(MouseLookConditionSettings conditions, string windowName)
-    {
-        conditions.IgnoredDalamudWindowNames.RemoveAll(existing => string.Equals(existing, windowName, StringComparison.OrdinalIgnoreCase));
-        save();
-    }
+        });
 
     private static string GetSuggestedWindowPattern(string windowName)
     {
-        if (string.IsNullOrWhiteSpace(windowName))
-        {
-            return string.Empty;
-        }
+        if (string.IsNullOrWhiteSpace(windowName)) return string.Empty;
 
         var slashIndex = windowName.IndexOf('/');
-        return slashIndex <= 0
-            ? string.Empty
-            : $"{windowName[..(slashIndex + 1)]}*";
+        return slashIndex <= 0 ? string.Empty : $"{windowName[..(slashIndex + 1)]}*";
     }
 }
