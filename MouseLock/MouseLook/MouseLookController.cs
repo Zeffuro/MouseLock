@@ -40,19 +40,29 @@ internal sealed unsafe class MouseLookController
     public void SuppressMouseButtons(UIInputData* inputData, MouseButtonFlags buttons)
         => MouseButtonSuppression.Apply(inputData, buttons);
 
-    public void ApplyCameraInput(UIInputData* inputData, bool classicForwardHeld)
-        => _mouseDragState.Apply(inputData, classicForwardHeld);
+    public void ApplyCameraInput(UIInputData* inputData, bool classicForwardHeld, bool useNativeCameraInput)
+    {
+        if (useNativeCameraInput)
+        {
+            _mouseDragState.Release(inputData);
+        }
+        else
+        {
+            _mouseDragState.Apply(inputData, classicForwardHeld);
+        }
+    }
 
     public void Apply(
         UIInputData* inputData,
         MouseLookApplyOptions options,
-        bool classicForwardHeld)
+        bool classicForwardHeld,
+        bool useNativeCameraInput)
     {
         _cursorOverlayState.Release(inputData);
 
         _cursorRecenterState.Apply(inputData, applyScheduledMoveCompensation: true, options.RememberCursorPosition);
         MouseButtonSuppression.Apply(inputData, MouseLookButtons.PhysicalLookButtons);
-        _mouseDragState.Apply(inputData, classicForwardHeld);
+        ApplyCameraInput(inputData, classicForwardHeld, useNativeCameraInput);
         _cursorVisibilityState.Apply();
 
         if (options.ApplyCursorOverlayCompatibility)

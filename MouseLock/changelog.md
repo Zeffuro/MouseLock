@@ -1,3 +1,7 @@
+# 1.0.1.1
+- Fixed not being able to use gamepad camera while in MouseLook.
+- Added a setting to freely switch between MouseLook and gamepad camera in gamepad mode.
+
 # 1.0.1.0
 - Added targeting reticle and automatic soft target targeting.
 

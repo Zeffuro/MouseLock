@@ -48,6 +48,14 @@ internal sealed class GeneralTab(
             MouseLockStateController.SetEnabled(enabled);
         }
 
+        var useNativeCameraInGamepadMode = config.General.UseNativeCameraInGamepadMode;
+        if (ImGui.Checkbox("Use native camera controls in gamepad mode", ref useNativeCameraInGamepadMode))
+        {
+            config.General.UseNativeCameraInGamepadMode = useNativeCameraInGamepadMode;
+            save();
+        }
+        ConfigWindow.DrawTooltip("Disable this to switch freely between mouse look and the controller while staying in gamepad mode. Stick camera input always takes priority over mouse look.");
+
         var releaseModifierIndex = FindOptionIndex(ReleaseModifierOptions, config.General.ReleaseModifier);
         if (ImGui.Combo("Temporary release modifier", ref releaseModifierIndex, ReleaseModifierLabels, ReleaseModifierLabels.Length))
         {

@@ -8,6 +8,7 @@ public sealed class GeneralSettings
     private bool? _legacyStickyReleaseEnabled;
 
     public bool Enabled { get; set; } = true;
+    public bool UseNativeCameraInGamepadMode { get; set; } = true;
     public bool FirstRunIntroCompleted { get; set; }
     public bool DebugEnabled { get; set; }
     public ReleaseModifierKey ReleaseModifier { get; set; } = ReleaseModifierKey.Alt;

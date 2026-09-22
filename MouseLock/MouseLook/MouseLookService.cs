@@ -229,8 +229,12 @@ internal sealed class MouseLookService : IDisposable
                 return _hooks.RunOriginalCameraInputSource();
             }
 
-            _controller.ApplyCameraInput(inputData, _classicForwardHeld);
-            return CameraInputSource.MouseDrag;
+            var useNativeCameraInput = ShouldUseNativeCameraInput();
+            _controller.ApplyCameraInput(inputData, _classicForwardHeld, useNativeCameraInput);
+
+            return useNativeCameraInput
+                ? _hooks.RunOriginalCameraInputSource()
+                : CameraInputSource.MouseDrag;
         }
         catch (Exception ex)
         {
@@ -264,13 +268,29 @@ internal sealed class MouseLookService : IDisposable
         => _controller.Apply(
             inputData,
             CreateApplyOptions(applyCursorOverlayCompatibility: true),
-            _classicForwardHeld);
+            _classicForwardHeld,
+            ShouldUseNativeCameraInput());
 
     private unsafe void ApplyMouseLookBeforeNativeInput(UIInputData* inputData)
         => _controller.Apply(
             inputData,
             CreateApplyOptions(applyCursorOverlayCompatibility: false),
-            _classicForwardHeld);
+            _classicForwardHeld,
+            ShouldUseNativeCameraInput());
+
+    private unsafe bool ShouldUseNativeCameraInput()
+    {
+        if (PluginState.Config.General.UseNativeCameraInGamepadMode)
+        {
+            var uiModule = UIModule.Instance();
+            if (uiModule is not null && uiModule->IsPadModeEnabled())
+            {
+                return true;
+            }
+        }
+
+        return _hooks.RunOriginalCameraInputSource() == CameraInputSource.Analog;
+    }
 
     private static MouseLookApplyOptions CreateApplyOptions(bool applyCursorOverlayCompatibility)
         => new(
