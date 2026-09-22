@@ -10,7 +10,7 @@ internal static class ReticleDepth
     {
         depth = 0;
         var manager = Manager.Instance();
-        var camera = manager == null ? null : manager->MainCamera;
+        var camera = manager == null ? null : manager->Views[(int)Manager.RenderViews.Main].SubViews[12].Camera;
         return camera != null && TryCalculate(camera->ProjectionMatrix, distance, out depth);
     }
 
