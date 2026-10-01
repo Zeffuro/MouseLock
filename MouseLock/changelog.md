@@ -1,3 +1,10 @@
+# 1.0.1.3
+- Added an option to keep MouseLock active while config is open.
+- Added recent window history with quick exception buttons.
+- Added pause history and preserved the last pause reason when opening config.
+- Moved window exceptions to their own tab and made the config more compact.
+- Added the ability to manually define windows to add to exceptions.
+
 # 1.0.1.2
 - Add an option to disable auto-target when not in combat.
 - Add toggle and slider to allow toggling hiding the crosshair based on depth and how far.

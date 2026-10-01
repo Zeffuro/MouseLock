@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.Windowing;
@@ -11,24 +12,35 @@ internal static class DalamudUiState
     private static readonly TimeSpan RecentFocusGracePeriod = TimeSpan.FromMilliseconds(250);
 
     private static DalamudWindowFocus _lastExternalFocus;
+    private static readonly RecentWindowHistory<DalamudWindowFocus> FocusHistory = new();
+
+    public static IReadOnlyList<DalamudWindowFocus> RecentExternalFocus => FocusHistory.Entries;
+
+    public static void UpdateFocusSnapshot() => RefreshFocusSnapshot(GetCurrentFocus());
+
+    public static void ClearFocusSnapshot()
+    {
+        _lastExternalFocus = default;
+        FocusHistory.Clear();
+    }
 
     private static string CurrentWindowSystemNamespace
         => WindowSystem.FocusedWindowSystemNamespace;
 
-    public static DalamudWindowFocus LastExternalFocus
-    {
-        get
-        {
-            var focus = GetCurrentFocus();
-            RefreshFocusSnapshot(focus);
-            return _lastExternalFocus;
-        }
-    }
+    public static DalamudWindowFocus LastExternalFocus => _lastExternalFocus;
 
     public static bool IsBlockingUiActive(MouseLookConditionSettings conditions)
+        => TryGetBlockingFocus(conditions, out _);
+
+    public static bool TryGetBlockingFocus(MouseLookConditionSettings conditions, out DalamudWindowFocus focus)
     {
-        var focus = GetCurrentFocus();
+        focus = GetCurrentFocus();
         RefreshFocusSnapshot(focus);
+
+        if (!conditions.DisableWhileConfigOpen && IsMouseLockWindowSystem(focus.WindowSystemNamespace))
+        {
+            return false;
+        }
 
         return IsBlockingWindowSystemFocusActive(focus, conditions);
     }
@@ -62,6 +74,7 @@ internal static class DalamudUiState
         }
 
         _lastExternalFocus = focus;
+        FocusHistory.Record(focus);
     }
 
     private static DalamudWindowFocus GetCurrentFocus()

@@ -11,6 +11,7 @@ namespace MouseLock.Windows.Components;
 internal sealed class DalamudWindowExceptionEditor(Action save)
 {
     private readonly WindowExceptionTable _table = new();
+    private string _manualName = string.Empty;
 
     public void Draw(MouseLookConditionSettings conditions)
     {
@@ -25,14 +26,18 @@ internal sealed class DalamudWindowExceptionEditor(Action save)
         var focus = DalamudUiState.LastExternalFocus;
         ImGui.TextWrapped($"Last focused: {ConfigWindow.DisplayAddonName(focus.WindowName)}");
         ConfigWindow.DrawTooltip($"Window system: {ConfigWindow.DisplayAddonName(focus.WindowSystemNamespace)}");
-        using (ImRaii.Disabled(focus.IsEmpty))
-        {
-            if (ImGui.Button("Add exception"))
-                ImGui.OpenPopup("AddException");
-        }
-        ConfigWindow.DrawTooltip("Focus another plugin window, then return here to allow it.");
+        if (ImGui.Button("Add exception..."))
+            ImGui.OpenPopup("AddException");
+        ConfigWindow.DrawTooltip("Allow the last focused window or enter a window name. Other pause settings still apply.");
         DrawAddMenu(conditions, focus);
+        RecentWindowTable.Draw(DalamudUiState.RecentExternalFocus.Select(window => new RecentWindowEntry(
+            string.IsNullOrEmpty(window.WindowName) ? window.WindowSystemNamespace : window.WindowName,
+            $"Window system: {window.WindowSystemNamespace}",
+            conditions.IsDalamudWindowIgnored(window.WindowName) || conditions.IsDalamudWindowSystemIgnored(window.WindowSystemNamespace),
+            string.IsNullOrEmpty(window.WindowName) ? "Add system" : "Add",
+            () => AddRecentWindow(conditions, window))).ToList());
         ImGui.Spacing();
+        ImGui.Separator();
 
         var entries = conditions.IgnoredDalamudWindowNames
             .Distinct(StringComparer.OrdinalIgnoreCase)
@@ -52,12 +57,49 @@ internal sealed class DalamudWindowExceptionEditor(Action save)
         using var popup = ImRaii.Popup("AddException");
         if (!popup) return;
 
-        DrawAddOption("This window", conditions.IgnoredDalamudWindowNames, focus.WindowName);
-        DrawAddOption("Window family", conditions.IgnoredDalamudWindowNames, GetSuggestedWindowPattern(focus.WindowName));
-        DrawAddOption("Entire window system", conditions.IgnoredDalamudWindowSystemNamespaces, focus.WindowSystemNamespace);
+        ImGui.TextUnformatted("Last focused window");
+        ImGui.TextWrapped(ConfigWindow.DisplayAddonName(focus.WindowName));
+        ImGui.Separator();
+        DrawAddOption("Only this window", conditions.IgnoredDalamudWindowNames, focus.WindowName,
+            "Allow this exact window name.");
+        DrawAddOption("Window family", conditions.IgnoredDalamudWindowNames, GetSuggestedWindowPattern(focus.WindowName),
+            "Allow windows whose names begin with this prefix.");
+        DrawAddOption("Entire window system", conditions.IgnoredDalamudWindowSystemNamespaces, focus.WindowSystemNamespace,
+            "Allow all windows belonging to this window system.");
+
+        ImGui.Separator();
+        ImGui.TextUnformatted("Add by name");
+        ImGui.SetNextItemWidth(ImGui.GetFontSize() * 22);
+        ImGui.InputTextWithHint("##WindowName", "Window name or prefix*", ref _manualName, 512);
+        ConfigWindow.DrawTooltip("Include any ## or ### suffix. A trailing * matches names that start with this text.");
+        var manualName = _manualName.Trim();
+        var alreadyAllowed = conditions.IgnoredDalamudWindowNames.Contains(manualName, StringComparer.OrdinalIgnoreCase);
+        using (ImRaii.Disabled(manualName.Length == 0 || alreadyAllowed))
+        {
+            if (ImGui.Button(alreadyAllowed ? "Already allowed" : "Add"))
+            {
+                conditions.IgnoredDalamudWindowNames.Add(manualName);
+                conditions.IgnoredDalamudWindowNames.Sort(StringComparer.OrdinalIgnoreCase);
+                save();
+                _manualName = string.Empty;
+                ImGui.CloseCurrentPopup();
+            }
+        }
     }
 
-    private void DrawAddOption(string label, List<string> names, string name)
+    private void AddRecentWindow(MouseLookConditionSettings conditions, DalamudWindowFocus focus)
+    {
+        var systemOnly = string.IsNullOrEmpty(focus.WindowName);
+        var names = systemOnly ? conditions.IgnoredDalamudWindowSystemNamespaces : conditions.IgnoredDalamudWindowNames;
+        var name = systemOnly ? focus.WindowSystemNamespace : focus.WindowName;
+        if (string.IsNullOrWhiteSpace(name) || names.Contains(name, StringComparer.OrdinalIgnoreCase)) return;
+
+        names.Add(name);
+        names.Sort(StringComparer.OrdinalIgnoreCase);
+        save();
+    }
+
+    private void DrawAddOption(string label, List<string> names, string name, string description)
     {
         var normalizedName = name?.Trim() ?? string.Empty;
         var alreadyAllowed = names.Contains(normalizedName, StringComparer.OrdinalIgnoreCase);
@@ -68,7 +110,7 @@ internal sealed class DalamudWindowExceptionEditor(Action save)
             names.Sort(StringComparer.OrdinalIgnoreCase);
             save();
         }
-        ConfigWindow.DrawTooltip(string.IsNullOrEmpty(name) ? "Not available for this window." : name);
+        ConfigWindow.DrawTooltip(string.IsNullOrEmpty(name) ? "Not available for this window." : $"{description}\n{name}");
     }
 
     private WindowExceptionEntry CreateEntry(List<string> names, string name, string rule)

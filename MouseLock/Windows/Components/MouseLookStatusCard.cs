@@ -13,6 +13,10 @@ internal sealed class MouseLookStatusCard
 
         ImGui.TextUnformatted($"Status: {MouseLookStatusFormatter.GetSummary(status)}");
         ImGui.TextDisabled(MouseLookStatusFormatter.GetDetail(status));
+        if (PluginState.MouseLookService?.PauseHistory.LastPauseBeforeConfig is { } previousPause)
+        {
+            ImGui.TextWrapped($"Last pause before config ({previousPause.Timestamp.ToLocalTime():HH:mm:ss}): {previousPause.Description}");
+        }
         if (SuspensionRegistry.IsSuspended)
         {
             ImGui.TextDisabled($"External suspensions: {SuspensionRegistry.SourcesSummary}");

@@ -17,6 +17,17 @@ internal sealed class MouseLookActivationRules(TextInputMonitor textInputMonitor
         AtkModule* atkModule = null,
         MouseButtonFlags temporaryReleaseButtons = MouseButtonFlags.None)
     {
+        if (Service.ClientState.IsLoggedIn)
+        {
+            NativeUiState.UpdateFocusSnapshot();
+            DalamudUiState.UpdateFocusSnapshot();
+        }
+        else
+        {
+            NativeUiState.ClearFocusSnapshot();
+            DalamudUiState.ClearFocusSnapshot();
+        }
+
         if (!PluginState.Config.General.Enabled)
         {
             return MouseLookDecision.Pause(MouseLookPauseReason.PluginDisabled);
@@ -27,7 +38,8 @@ internal sealed class MouseLookActivationRules(TextInputMonitor textInputMonitor
             return MouseLookDecision.Pause(MouseLookPauseReason.LoggedOut);
         }
 
-        if (PluginState.ConfigWindow.IsOpen)
+        var conditions = PluginState.Config.Activation.Conditions;
+        if (conditions.DisableWhileConfigOpen && PluginState.ConfigWindow.IsOpen)
         {
             return MouseLookDecision.Pause(MouseLookPauseReason.ConfigWindowOpen);
         }
@@ -47,7 +59,6 @@ internal sealed class MouseLookActivationRules(TextInputMonitor textInputMonitor
             return MouseLookDecision.Pause(MouseLookPauseReason.GameUnfocused);
         }
 
-        var conditions = PluginState.Config.Activation.Conditions;
         if (conditions.DisableDuringCutscenes && IsCutsceneActive())
         {
             return MouseLookDecision.Pause(MouseLookPauseReason.Cutscene);
@@ -103,23 +114,24 @@ internal sealed class MouseLookActivationRules(TextInputMonitor textInputMonitor
             return MouseLookDecision.Pause(MouseLookPauseReason.TalkAddon);
         }
 
-        if (conditions.DisableWhenDalamudWindowFocused && DalamudUiState.IsBlockingUiActive(conditions))
+        if (conditions.DisableWhenDalamudWindowFocused && DalamudUiState.TryGetBlockingFocus(conditions, out var focus))
         {
-            return MouseLookDecision.Pause(MouseLookPauseReason.DalamudWindowFocused);
+            return MouseLookDecision.Pause(MouseLookPauseReason.DalamudWindowFocused,
+                string.IsNullOrEmpty(focus.WindowName) ? focus.WindowSystemNamespace : focus.WindowName);
         }
 
         if (conditions.DisableWhenNativeAddonFocused &&
             NativeUiState.TryGetFocusedBlockingAddonName(out var focusedAddonName) &&
             !conditions.IsFocusedAddonIgnored(focusedAddonName))
         {
-            return MouseLookDecision.Pause(MouseLookPauseReason.NativeAddonFocused);
+            return MouseLookDecision.Pause(MouseLookPauseReason.NativeAddonFocused, focusedAddonName);
         }
 
         if (conditions.DisableWhenNativeAddonHovered &&
             NativeUiState.TryGetHoveredBlockingAddonName(inputData, out var hoveredAddonName) &&
             !conditions.IsHoveredAddonIgnored(hoveredAddonName))
         {
-            return MouseLookDecision.Pause(MouseLookPauseReason.NativeAddonHovered);
+            return MouseLookDecision.Pause(MouseLookPauseReason.NativeAddonHovered, hoveredAddonName);
         }
 
         if (PluginState.Config.Compatibility.DisableDuringTPieRing &&
@@ -151,7 +163,7 @@ internal sealed class MouseLookActivationRules(TextInputMonitor textInputMonitor
         AtkModule* atkModule = null)
     {
         if (!Service.ClientState.IsLoggedIn ||
-            PluginState.ConfigWindow.IsOpen ||
+            (PluginState.Config.Activation.Conditions.DisableWhileConfigOpen && PluginState.ConfigWindow.IsOpen) ||
             PluginState.FirstRunWindow is { IsOpen: true } ||
             inputData is null ||
             !inputData->CursorInputs.IsGameWindowFocused)

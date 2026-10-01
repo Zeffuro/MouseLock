@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 
@@ -5,6 +7,21 @@ namespace MouseLock.Game;
 
 internal static unsafe class NativeUiState
 {
+    private static readonly RecentWindowHistory<string> FocusHistory = new(StringComparer.OrdinalIgnoreCase);
+
+    public static IReadOnlyList<string> RecentFocusedAddonNames => FocusHistory.Entries;
+    public static string LastFocusedAddonName => FocusHistory.Entries.Count > 0 ? FocusHistory.Entries[0] : string.Empty;
+
+    public static void UpdateFocusSnapshot()
+    {
+        if (TryGetFocusedBlockingAddonName(out var name))
+        {
+            if (!string.IsNullOrEmpty(name)) FocusHistory.Record(name);
+        }
+    }
+
+    public static void ClearFocusSnapshot() => FocusHistory.Clear();
+
     public static bool IsAddonVisible(string addonName)
     {
         var unitManager = RaptureAtkUnitManager.Instance();

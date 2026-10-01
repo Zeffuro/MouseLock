@@ -26,6 +26,7 @@ internal sealed partial class ConfigWindow : Window
     private readonly DtrSettingsEditor _dtrSettingsEditor;
     private readonly GeneralTab _generalTab;
     private readonly ActivationTab _activationTab;
+    private readonly WindowExceptionsTab _windowExceptionsTab;
     private readonly MouseActionsTab _mouseActionsTab;
     private readonly CompatibilityTab _compatibilityTab;
     private readonly TargetingTab _targetingTab;
@@ -50,7 +51,8 @@ internal sealed partial class ConfigWindow : Window
             _toggleKeybindEditor,
             _dtrSettingsEditor,
             _configurationTransferPanel);
-        _activationTab = new ActivationTab(_config, Save, _nativeAddonExceptionEditor, _dalamudWindowExceptionEditor);
+        _activationTab = new ActivationTab(_config, Save);
+        _windowExceptionsTab = new WindowExceptionsTab(_config, _nativeAddonExceptionEditor, _dalamudWindowExceptionEditor);
         _mouseActionsTab = new MouseActionsTab(_config, Save, _hotbarSlotPicker);
         _compatibilityTab = new CompatibilityTab(_config, Save);
         _targetingTab = new TargetingTab(_config, Save);
@@ -73,6 +75,7 @@ internal sealed partial class ConfigWindow : Window
 
         _generalTab.Draw();
         _activationTab.Draw();
+        _windowExceptionsTab.Draw();
         _mouseActionsTab.Draw();
         _targetingTab.Draw();
         _compatibilityTab.Draw();

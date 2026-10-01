@@ -16,6 +16,7 @@ public sealed class MouseLookConditionSettings
     private List<string> _ignoredDalamudWindowNames = [.. DefaultIgnoredDalamudWindowNames];
 
     public bool DisableWhileTextInputActive { get; set; } = true;
+    public bool DisableWhileConfigOpen { get; set; } = true;
     public bool DisableWhenTalkAddonVisible { get; set; } = true;
     public bool DisableWhenDalamudWindowFocused { get; set; } = true;
     public bool DisableWhenNativeAddonFocused { get; set; } = true;

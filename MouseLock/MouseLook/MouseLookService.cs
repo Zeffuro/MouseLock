@@ -4,6 +4,7 @@ using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.System.Input;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Component.GUI;
+using MouseLock.Game;
 using MouseLock.Input;
 using MouseLock.Integrations;
 using MouseLock.MouseLook.Activation;
@@ -33,6 +34,8 @@ internal sealed class MouseLookService : IDisposable
     internal MouseLookStatus Status => _status;
 
     internal MouseLookDecision LastDecision => _lastDecision;
+
+    internal MouseLookPauseHistory PauseHistory { get; } = new();
 
     internal bool IsAtkModuleHandleInputHookReady => _hooks.IsAtkModuleHandleInputHookReady;
 
@@ -306,6 +309,11 @@ internal sealed class MouseLookService : IDisposable
 
     private void HandleInputUnavailable()
     {
+        if (!Service.ClientState.IsLoggedIn)
+        {
+            NativeUiState.ClearFocusSnapshot();
+            DalamudUiState.ClearFocusSnapshot();
+        }
         ReleaseMouseLookWithoutInput(restoreCursor: false);
         UpdateStatus(MouseLookDecision.Pause(MouseLookPauseReason.InputUnavailable));
     }
@@ -333,6 +341,7 @@ internal sealed class MouseLookService : IDisposable
 
     private void UpdateStatus(MouseLookDecision decision)
     {
+        PauseHistory.Observe(decision, PluginState.ConfigWindow.IsOpen);
         _lastDecision = decision;
         RefreshStatus();
     }

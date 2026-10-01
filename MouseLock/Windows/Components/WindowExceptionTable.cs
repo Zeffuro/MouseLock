@@ -18,8 +18,18 @@ internal sealed class WindowExceptionTable
             return;
         }
 
-        ImGui.SetNextItemWidth(-1);
-        ImGui.InputTextWithHint("##Filter", "Filter exceptions", ref _filter, 128);
+        var showClear = _filter.Length > 0;
+        var clearWidth = ImGui.CalcTextSize("Clear").X + ImGui.GetStyle().FramePadding.X * 2;
+        ImGui.SetNextItemWidth(showClear
+            ? Math.Max(1, ImGui.GetContentRegionAvail().X - clearWidth - ImGui.GetStyle().ItemSpacing.X)
+            : -1);
+        ImGui.InputTextWithHint("##Filter", "Search saved exceptions", ref _filter, 128);
+        ConfigWindow.DrawTooltip("Filters the list below. Use Add exception to allow another window.");
+        if (showClear)
+        {
+            ImGui.SameLine();
+            if (ImGui.Button("Clear")) _filter = string.Empty;
+        }
         using var table = ImRaii.Table("Exceptions", 3,
             ImGuiTableFlags.RowBg | ImGuiTableFlags.BordersInnerH | ImGuiTableFlags.ScrollY,
             new Vector2(0, ImGui.GetFrameHeightWithSpacing() * Math.Min(entries.Count + 1, 7)));

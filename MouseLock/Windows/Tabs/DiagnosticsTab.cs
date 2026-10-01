@@ -34,6 +34,10 @@ internal sealed class DiagnosticsTab(SystemConfiguration config, Action save)
 
         ImGui.TextUnformatted($"Status: {MouseLookStatusFormatter.GetSummary(status)}");
         ImGui.TextUnformatted($"Last decision: {(lastDecision.ShouldLock ? "Allow" : "Pause")} ({lastDecision.Reason})");
+        if (!string.IsNullOrEmpty(lastDecision.WindowName))
+        {
+            ImGui.TextWrapped($"Responsible window: {lastDecision.WindowName}");
+        }
         ImGui.TextUnformatted($"Overall availability: {FormatReady(service?.IsMouseLookAvailable == true)}");
         ImGui.TextUnformatted($"Atk input detour: {FormatReady(service?.IsAtkModuleHandleInputHookReady == true)}");
         ImGui.TextUnformatted($"Camera input detour: {FormatReady(service?.IsCameraInputSourceHookReady == true)}");
@@ -52,8 +56,25 @@ internal sealed class DiagnosticsTab(SystemConfiguration config, Action save)
                 : "None";
 
         ImGui.TextUnformatted($"Focused native addon: {focusedAddon}");
+        ImGui.TextWrapped($"Last focused native addon: {ConfigWindow.DisplayAddonName(NativeUiState.LastFocusedAddonName)}");
         ImGui.TextUnformatted($"Hovered native addon: {hoveredAddon}");
         ImGui.TextUnformatted($"External suspensions: {DisplayExternalSuspensions()}");
+
+        ConfigWindow.DrawSection("Recent pauses (newest first)");
+        ImGui.TextWrapped("Keeps the last eight pause transitions, including window names. Opening config preserves the earlier entries.");
+        if (service is null || service.PauseHistory.Entries.Count == 0)
+        {
+            ImGui.TextDisabled("No pauses recorded yet.");
+        }
+        else
+        {
+            var entries = service.PauseHistory.Entries;
+            for (var index = entries.Count - 1; index >= 0; index--)
+            {
+                var entry = entries[index];
+                ImGui.TextWrapped($"{entry.Timestamp.ToLocalTime():HH:mm:ss} — {entry.Description}");
+            }
+        }
 
         ImGui.Spacing();
         if (ImGui.Button("Force release cursor"))

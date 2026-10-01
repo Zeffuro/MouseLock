@@ -3,15 +3,12 @@ using System.Collections.Generic;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.Utility.Raii;
 using MouseLock.Configuration;
-using MouseLock.Windows.Components;
 
 namespace MouseLock.Windows.Tabs;
 
 internal sealed class ActivationTab(
     SystemConfiguration config,
-    Action save,
-    NativeAddonExceptionEditor nativeAddonExceptionEditor,
-    DalamudWindowExceptionEditor dalamudWindowExceptionEditor)
+    Action save)
 {
     private static readonly ComboOption<MouseLookResumePolicy>[] ResumePolicyOptions =
     [
@@ -32,6 +29,14 @@ internal sealed class ActivationTab(
 
         var activation = config.Activation;
         var conditions = activation.Conditions;
+
+        var disableWhileConfigOpen = conditions.DisableWhileConfigOpen;
+        if (ImGui.Checkbox("Pause while MouseLock config is open", ref disableWhileConfigOpen))
+        {
+            conditions.DisableWhileConfigOpen = disableWhileConfigOpen;
+            save();
+        }
+        ConfigWindow.DrawTooltip("Turn off to test MouseLock with config open. Hold your release modifier to use the cursor. Text input and other pause conditions still apply.");
 
         var disableWhileTextInputActive = conditions.DisableWhileTextInputActive;
         if (ImGui.Checkbox("Pause while chat/text input is active", ref disableWhileTextInputActive))
@@ -114,12 +119,12 @@ internal sealed class ActivationTab(
                 "This setting does not affect the release modifier or mouse-button actions.");
         }
 
-        ConfigWindow.DrawSection("Game state pauses");
-        DrawGameStatePauseSettings(conditions);
-
-        ConfigWindow.DrawSection("Window exceptions");
-        dalamudWindowExceptionEditor.Draw(conditions);
-        nativeAddonExceptionEditor.Draw(conditions);
+        ImGui.Spacing();
+        ImGui.Separator();
+        if (ImGui.CollapsingHeader("Game state pauses"))
+        {
+            DrawGameStatePauseSettings(conditions);
+        }
     }
 
     private void DrawGameStatePauseSettings(MouseLookConditionSettings conditions)
