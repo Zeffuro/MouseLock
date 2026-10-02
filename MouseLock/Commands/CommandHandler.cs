@@ -26,6 +26,7 @@ internal sealed class CommandHandler : IDisposable
             ["status"] = new(_ => PrintStatus(), "Show current status"),
             ["suspend"] = new(HandleSuspend, "Toggle or control command-based suspension", "[on|off|resume|clear|status] [source]"),
             ["toggle"] = new(_ => ToggleEnabled(), "Toggle Mouselook"),
+            ["trace"] = new(HandleTrace, "Record mouse input", "[start [label]|stop|save|status]"),
         };
 
         Service.CommandManager.AddHandler(MainCommand, new CommandInfo(OnCommand)
@@ -118,6 +119,26 @@ internal sealed class CommandHandler : IDisposable
     }
 
     private const string DefaultCommandSuspensionSource = "Command";
+
+    private static void HandleTrace(string args)
+    {
+        var trace = PluginState.MouseLookService?.InputTrace;
+        if (trace is null)
+        {
+            PrintChat("Recording unavailable.");
+            return;
+        }
+        var parts = args.Trim().Split(' ', 2, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        var action = parts.Length == 0 ? "status" : parts[0].ToLowerInvariant();
+        PrintChat(action switch
+        {
+            "start" => trace.Start(parts.Length > 1 ? parts[1] : "input"),
+            "stop" => trace.Stop(),
+            "save" => trace.Save(),
+            "status" => trace.Summary,
+            _ => "Use /mouselock trace start [label]|stop|save|status.",
+        });
+    }
 
     private static void SetSuspended(string source, bool suspended)
     {

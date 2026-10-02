@@ -1,3 +1,10 @@
+# 1.0.1.4
+- Fixed a bug where the MouseLook sensitivity was higher than holding right-click.
+  If it feels slower than you're used to, adjust Mouse Camera Sensitivity under System Configuration -> Mouse Settings.
+- Added input recording to help troubleshoot mouse issues.
+- Cleaned up the Diagnostics tab and made it available in release builds.
+- Made some performance optimizations.
+
 # 1.0.1.3
 - Added an option to keep MouseLock active while config is open.
 - Added recent window history with quick exception buttons.

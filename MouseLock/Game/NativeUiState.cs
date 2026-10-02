@@ -12,12 +12,11 @@ internal static unsafe class NativeUiState
     public static IReadOnlyList<string> RecentFocusedAddonNames => FocusHistory.Entries;
     public static string LastFocusedAddonName => FocusHistory.Entries.Count > 0 ? FocusHistory.Entries[0] : string.Empty;
 
-    public static void UpdateFocusSnapshot()
+    public static bool UpdateFocusSnapshot(out string name)
     {
-        if (TryGetFocusedBlockingAddonName(out var name))
-        {
-            if (!string.IsNullOrEmpty(name)) FocusHistory.Record(name);
-        }
+        var isBlocking = TryGetFocusedBlockingAddonName(out name);
+        if (isBlocking && !string.IsNullOrEmpty(name)) FocusHistory.Record(name);
+        return isBlocking;
     }
 
     public static void ClearFocusSnapshot() => FocusHistory.Clear();

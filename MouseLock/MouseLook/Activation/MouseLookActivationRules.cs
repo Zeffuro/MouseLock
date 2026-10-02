@@ -17,10 +17,13 @@ internal sealed class MouseLookActivationRules(TextInputMonitor textInputMonitor
         AtkModule* atkModule = null,
         MouseButtonFlags temporaryReleaseButtons = MouseButtonFlags.None)
     {
+        var focusedAddonName = string.Empty;
+        var isNativeAddonFocused = false;
+        var focus = default(DalamudWindowFocus);
         if (Service.ClientState.IsLoggedIn)
         {
-            NativeUiState.UpdateFocusSnapshot();
-            DalamudUiState.UpdateFocusSnapshot();
+            isNativeAddonFocused = NativeUiState.UpdateFocusSnapshot(out focusedAddonName);
+            focus = DalamudUiState.UpdateFocusSnapshot();
         }
         else
         {
@@ -114,14 +117,14 @@ internal sealed class MouseLookActivationRules(TextInputMonitor textInputMonitor
             return MouseLookDecision.Pause(MouseLookPauseReason.TalkAddon);
         }
 
-        if (conditions.DisableWhenDalamudWindowFocused && DalamudUiState.TryGetBlockingFocus(conditions, out var focus))
+        if (conditions.DisableWhenDalamudWindowFocused && DalamudUiState.IsBlockingFocus(conditions, focus))
         {
             return MouseLookDecision.Pause(MouseLookPauseReason.DalamudWindowFocused,
                 string.IsNullOrEmpty(focus.WindowName) ? focus.WindowSystemNamespace : focus.WindowName);
         }
 
         if (conditions.DisableWhenNativeAddonFocused &&
-            NativeUiState.TryGetFocusedBlockingAddonName(out var focusedAddonName) &&
+            isNativeAddonFocused &&
             !conditions.IsFocusedAddonIgnored(focusedAddonName))
         {
             return MouseLookDecision.Pause(MouseLookPauseReason.NativeAddonFocused, focusedAddonName);

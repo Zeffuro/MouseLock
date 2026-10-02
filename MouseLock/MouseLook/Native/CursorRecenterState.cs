@@ -2,21 +2,20 @@ using System;
 using FFXIVClientStructs.FFXIV.Client.System.Input;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Component.GUI;
+using MouseLock.MouseLook.Diagnostics;
 
 namespace MouseLock.MouseLook.Native;
 
 internal sealed unsafe class CursorRecenterState
 {
     private bool _hasRestorePosition;
-    private bool _hasScheduledCursorMoveDelta;
-    private bool _clearScheduledCursorMoveDeltaOnCompensation;
     private int _restorePositionX;
     private int _restorePositionY;
-    private int _scheduledCursorMoveDeltaX;
-    private int _scheduledCursorMoveDeltaY;
+    private readonly MouseInputTrace _trace;
 
-    public CursorRecenterState()
+    public CursorRecenterState(MouseInputTrace trace)
     {
+        _trace = trace;
         try
         {
             var address = (nint)MouseDevice.MemberFunctionPointers.ScheduleCursorMove;
@@ -41,14 +40,8 @@ internal sealed unsafe class CursorRecenterState
 
     public void Apply(
         UIInputData* inputData,
-        bool applyScheduledMoveCompensation,
         bool rememberRestorePosition)
     {
-        if (applyScheduledMoveCompensation)
-        {
-            CompensateForScheduledCursorMove(inputData);
-        }
-
         if (!IsAvailable || !TryGetViewportCenter(out var centerX, out var centerY))
         {
             Reset();
@@ -93,20 +86,14 @@ internal sealed unsafe class CursorRecenterState
             return;
         }
 
+        var traceMoveId = _trace.NextMoveId();
+        _trace.Record("MoveScheduled", inputData, traceMoveId, centerX - currentX, centerY - currentY);
         MouseDevice.ScheduleCursorMove(centerX, centerY);
-
-        if (!_hasScheduledCursorMoveDelta)
-        {
-            _scheduledCursorMoveDeltaX = centerX - currentX;
-            _scheduledCursorMoveDeltaY = centerY - currentY;
-            _hasScheduledCursorMoveDelta = true;
-            _clearScheduledCursorMoveDeltaOnCompensation = !wasActive;
-        }
     }
 
     public void Release(bool restoreCursor)
     {
-        if (!IsActive && !_hasScheduledCursorMoveDelta)
+        if (!IsActive)
         {
             return;
         }
@@ -121,20 +108,23 @@ internal sealed unsafe class CursorRecenterState
 
     public void Release(UIInputData* inputData, bool restoreCursor)
     {
-        CompensateForScheduledCursorMove(inputData);
+        _trace.Record("ReleaseBefore", inputData);
+        if (restoreCursor && _hasRestorePosition && IsAvailable)
+        {
+            _trace.Record("RestoreScheduled", inputData, _trace.NextMoveId(),
+                _restorePositionX - inputData->CursorInputs.PositionX,
+                _restorePositionY - inputData->CursorInputs.PositionY);
+        }
         Release(restoreCursor);
+        _trace.Record("ReleaseAfter", inputData);
     }
 
     private void Reset()
     {
         IsActive = false;
         _hasRestorePosition = false;
-        _hasScheduledCursorMoveDelta = false;
-        _clearScheduledCursorMoveDeltaOnCompensation = false;
         _restorePositionX = 0;
         _restorePositionY = 0;
-        _scheduledCursorMoveDeltaX = 0;
-        _scheduledCursorMoveDeltaY = 0;
     }
 
     private void ClearRestorePosition()
@@ -142,47 +132,6 @@ internal sealed unsafe class CursorRecenterState
         _hasRestorePosition = false;
         _restorePositionX = 0;
         _restorePositionY = 0;
-    }
-
-    private void CompensateForScheduledCursorMove(UIInputData* inputData)
-    {
-        if (!_hasScheduledCursorMoveDelta)
-        {
-            return;
-        }
-
-        var originalDeltaX = inputData->CursorInputs.DeltaX;
-        var originalDeltaY = inputData->CursorInputs.DeltaY;
-
-        if (_clearScheduledCursorMoveDeltaOnCompensation)
-        {
-            ClearInputCursorDelta(inputData);
-            ClearScheduledCursorMoveDelta();
-            return;
-        }
-
-        ApplyScheduledCursorMoveDelta(&inputData->CursorInputs);
-        if (inputData->UIFilteredCursorInputs.DeltaX == originalDeltaX &&
-            inputData->UIFilteredCursorInputs.DeltaY == originalDeltaY)
-        {
-            ApplyScheduledCursorMoveDelta(&inputData->UIFilteredCursorInputs);
-        }
-
-        ClearScheduledCursorMoveDelta();
-    }
-
-    private void ClearScheduledCursorMoveDelta()
-    {
-        _hasScheduledCursorMoveDelta = false;
-        _clearScheduledCursorMoveDeltaOnCompensation = false;
-        _scheduledCursorMoveDeltaX = 0;
-        _scheduledCursorMoveDeltaY = 0;
-    }
-
-    private void ApplyScheduledCursorMoveDelta(CursorInputData* cursorInputs)
-    {
-        cursorInputs->DeltaX -= _scheduledCursorMoveDeltaX;
-        cursorInputs->DeltaY -= _scheduledCursorMoveDeltaY;
     }
 
     private static bool IsInsideViewport(int positionX, int positionY)

@@ -16,7 +16,12 @@ internal static class DalamudUiState
 
     public static IReadOnlyList<DalamudWindowFocus> RecentExternalFocus => FocusHistory.Entries;
 
-    public static void UpdateFocusSnapshot() => RefreshFocusSnapshot(GetCurrentFocus());
+    public static DalamudWindowFocus UpdateFocusSnapshot()
+    {
+        var focus = GetCurrentFocus();
+        RefreshFocusSnapshot(focus);
+        return focus;
+    }
 
     public static void ClearFocusSnapshot()
     {
@@ -34,9 +39,12 @@ internal static class DalamudUiState
 
     public static bool TryGetBlockingFocus(MouseLookConditionSettings conditions, out DalamudWindowFocus focus)
     {
-        focus = GetCurrentFocus();
-        RefreshFocusSnapshot(focus);
+        focus = UpdateFocusSnapshot();
+        return IsBlockingFocus(conditions, focus);
+    }
 
+    public static bool IsBlockingFocus(MouseLookConditionSettings conditions, DalamudWindowFocus focus)
+    {
         if (!conditions.DisableWhileConfigOpen && IsMouseLockWindowSystem(focus.WindowSystemNamespace))
         {
             return false;

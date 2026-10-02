@@ -9,6 +9,7 @@ using MouseLock.Input;
 using MouseLock.Integrations;
 using MouseLock.MouseLook.Activation;
 using MouseLock.MouseLook.Native;
+using MouseLock.MouseLook.Diagnostics;
 
 namespace MouseLock.MouseLook;
 
@@ -36,6 +37,8 @@ internal sealed class MouseLookService : IDisposable
     internal MouseLookDecision LastDecision => _lastDecision;
 
     internal MouseLookPauseHistory PauseHistory { get; } = new();
+
+    internal MouseInputTrace InputTrace => _controller.InputTrace;
 
     internal bool IsAtkModuleHandleInputHookReady => _hooks.IsAtkModuleHandleInputHookReady;
 
@@ -97,6 +100,7 @@ internal sealed class MouseLookService : IDisposable
     private unsafe void OnFrameworkUpdate(IFramework framework)
     {
         TPieIntegration.Update();
+        InputTrace.AdvanceFramework(framework.UpdateDelta.TotalMilliseconds);
         var inputData = UIInputData.Instance();
         if (inputData is null)
         {
@@ -118,6 +122,7 @@ internal sealed class MouseLookService : IDisposable
         UIInputData* inputData,
         bool isPadMouseModeEnabled)
     {
+        InputTrace.BeginInput(inputData);
         try
         {
             if (inputData is not null)
@@ -191,7 +196,9 @@ internal sealed class MouseLookService : IDisposable
             Service.Logger.Error(ex, "MouseLook pre-input update failed.");
         }
 
+        InputTrace.Record("BeforeNativeInput", inputData);
         var result = _hooks.RunOriginalAtkModuleHandleInput(atkModule, inputData, isPadMouseModeEnabled);
+        InputTrace.Record("AfterNativeInput", inputData);
         if (inputData is null)
         {
             HandleInputUnavailable();
@@ -202,6 +209,7 @@ internal sealed class MouseLookService : IDisposable
         {
             _textInputMonitor.UpdateNativeTextInput(atkModule);
             UpdateMouseLook(inputData, atkModule);
+            InputTrace.Record("InputExit", inputData);
         }
         catch (Exception ex)
         {
@@ -229,15 +237,19 @@ internal sealed class MouseLookService : IDisposable
                     ReleaseMouseLook(inputData);
                 }
 
-                return _hooks.RunOriginalCameraInputSource();
+                var source = _hooks.RunOriginalCameraInputSource();
+                InputTrace.Record("CameraOriginal", inputData, cameraSource: (int)source);
+                return source;
             }
 
             var useNativeCameraInput = ShouldUseNativeCameraInput();
             _controller.ApplyCameraInput(inputData, _classicForwardHeld, useNativeCameraInput);
 
-            return useNativeCameraInput
+            var cameraSource = useNativeCameraInput
                 ? _hooks.RunOriginalCameraInputSource()
                 : CameraInputSource.MouseDrag;
+            InputTrace.Record("CameraApplied", inputData, cameraSource: (int)cameraSource);
+            return cameraSource;
         }
         catch (Exception ex)
         {
@@ -343,6 +355,7 @@ internal sealed class MouseLookService : IDisposable
     {
         PauseHistory.Observe(decision, PluginState.ConfigWindow.IsOpen);
         _lastDecision = decision;
+        InputTrace.SetDecision(decision);
         RefreshStatus();
     }
 

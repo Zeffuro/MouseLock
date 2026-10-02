@@ -2,6 +2,7 @@ using FFXIVClientStructs.FFXIV.Client.System.Input;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using MouseLock.Input.MouseActions;
 using MouseLock.MouseLook.Native;
+using MouseLock.MouseLook.Diagnostics;
 
 namespace MouseLock.MouseLook;
 
@@ -9,9 +10,16 @@ internal sealed unsafe class MouseLookController
 {
     private readonly CursorOverlayState _cursorOverlayState = new();
     private readonly CursorVisibilityState _cursorVisibilityState = new();
-    private readonly CursorRecenterState _cursorRecenterState = new();
+    private readonly CursorRecenterState _cursorRecenterState;
     private readonly MouseDragState _mouseDragState = new();
     private readonly MouseButtonActionExecutor _mouseButtonActionExecutor = new();
+
+    internal MouseInputTrace InputTrace { get; } = new();
+
+    internal MouseLookController()
+    {
+        _cursorRecenterState = new CursorRecenterState(InputTrace);
+    }
 
     public bool IsActive => _mouseDragState.IsActive || _cursorVisibilityState.IsActive || _cursorRecenterState.IsActive;
 
@@ -60,7 +68,7 @@ internal sealed unsafe class MouseLookController
     {
         _cursorOverlayState.Release(inputData);
 
-        _cursorRecenterState.Apply(inputData, applyScheduledMoveCompensation: true, options.RememberCursorPosition);
+        _cursorRecenterState.Apply(inputData, options.RememberCursorPosition);
         MouseButtonSuppression.Apply(inputData, MouseLookButtons.PhysicalLookButtons);
         ApplyCameraInput(inputData, classicForwardHeld, useNativeCameraInput);
         _cursorVisibilityState.Apply();

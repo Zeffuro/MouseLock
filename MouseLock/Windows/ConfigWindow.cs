@@ -20,9 +20,7 @@ internal sealed partial class ConfigWindow : Window
     private readonly ToggleKeybindEditor _toggleKeybindEditor;
     private readonly NativeAddonExceptionEditor _nativeAddonExceptionEditor;
     private readonly DalamudWindowExceptionEditor _dalamudWindowExceptionEditor;
-#if DEBUG
     private readonly DiagnosticsTab _diagnosticsTab;
-#endif
     private readonly DtrSettingsEditor _dtrSettingsEditor;
     private readonly GeneralTab _generalTab;
     private readonly ActivationTab _activationTab;
@@ -41,9 +39,7 @@ internal sealed partial class ConfigWindow : Window
         _toggleKeybindEditor = new ToggleKeybindEditor(Save);
         _nativeAddonExceptionEditor = new NativeAddonExceptionEditor(Save);
         _dalamudWindowExceptionEditor = new DalamudWindowExceptionEditor(Save);
-#if DEBUG
-        _diagnosticsTab = new DiagnosticsTab(_config, Save);
-#endif
+        _diagnosticsTab = new DiagnosticsTab();
         _dtrSettingsEditor = new DtrSettingsEditor(Save);
         _generalTab = new GeneralTab(
             _config,
@@ -79,9 +75,7 @@ internal sealed partial class ConfigWindow : Window
         _mouseActionsTab.Draw();
         _targetingTab.Draw();
         _compatibilityTab.Draw();
-#if DEBUG
         _diagnosticsTab.Draw();
-#endif
     }
 
     private void Save()

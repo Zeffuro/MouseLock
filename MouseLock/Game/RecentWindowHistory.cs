@@ -12,9 +12,13 @@ internal sealed class RecentWindowHistory<T>(IEqualityComparer<T>? comparer = nu
 
     public void Record(T window)
     {
-        var existingIndex = _entries.FindIndex(entry => _comparer.Equals(entry, window));
-        if (existingIndex == 0) return;
-        if (existingIndex > 0) _entries.RemoveAt(existingIndex);
+        for (var index = 0; index < _entries.Count; index++)
+        {
+            if (!_comparer.Equals(_entries[index], window)) continue;
+            if (index == 0) return;
+            _entries.RemoveAt(index);
+            break;
+        }
         _entries.Insert(0, window);
         if (_entries.Count > Capacity) _entries.RemoveAt(Capacity);
     }
